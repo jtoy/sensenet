@@ -1,0 +1,10 @@
+<?xml version="1.0" ?>
+<robot name="jason">
+  <link name="base_link">
+    <collision>
+      <geometry>
+        <mesh filename="key.stl" scale="0.01 0.01 0.01"/>
+      </geometry>
+    </collision>
+  </link>
+</robot>
