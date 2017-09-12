@@ -74,7 +74,7 @@ while (1):
 
 
   #get camera position from index finger tip, indexId, 21
-  viewMatrix = p.computeViewMatrixFromYawPitchRoll(camTargetPos,camDistance,yaw,pitch,roll,upAxisIndex)
+  camTargetPos = [0,0,0]
   aspect = 1
   nearPlane = 0.01
   farPlane = 1000
@@ -89,8 +89,10 @@ while (1):
   farPlane = 1000
   lightDirection = [0,1,0]
   lightColor = [1,1,1]#optional
+  fov = 60
+  viewMatrix = p.computeViewMatrixFromYawPitchRoll(camTargetPos,camDistance,yaw,pitch,roll,upAxisIndex)
   projectionMatrix = p.computeProjectionMatrixFOV(fov,aspect,nearPlane,farPlane)
-  img_arr = p.getCameraImage(200,200, viewMatrix,projectionMatrix, lightDirection,lightColor,renderer=pybullet.ER_TINY_RENDERER)
+  img_arr = p.getCameraImage(200,200, viewMatrix,projectionMatrix, lightDirection,lightColor,renderer=p.ER_TINY_RENDERER)
 
 
   #why isnt the index finger all red?
