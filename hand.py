@@ -1,6 +1,7 @@
 import time,os,math,inspect
 import pybullet as p
 import random
+import matplotlib.pyplot as plt
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(os.path.dirname(currentdir))
 os.sys.path.insert(0,parentdir)
@@ -34,7 +35,8 @@ def convertSensor(bla,finger_index):
   if finger_index == indexId: 
     return random.uniform(-1,1)
   else:
-    return random.random()
+    return 0
+    #return random.random()
 
 p.setRealTimeSimulation(0)
 
@@ -69,6 +71,38 @@ while (1):
   p.setJointMotorControl2(hand,32,p.POSITION_CONTROL,ringpos)
   p.setJointMotorControl2(hand,34,p.POSITION_CONTROL,ringpos)
   p.setJointMotorControl2(hand,36,p.POSITION_CONTROL,ringpos)
+
+
+  #get camera position from index finger tip, indexId, 21
+  viewMatrix = p.computeViewMatrixFromYawPitchRoll(camTargetPos,camDistance,yaw,pitch,roll,upAxisIndex)
+  aspect = 1
+  nearPlane = 0.01
+  farPlane = 1000
+  yaw = 40
+  pitch = 10.0
+  roll=0
+  upAxisIndex = 2
+  camDistance = 4
+  pixelWidth = 320
+  pixelHeight = 240
+  nearPlane = 0.01
+  farPlane = 1000
+  lightDirection = [0,1,0]
+  lightColor = [1,1,1]#optional
+  projectionMatrix = p.computeProjectionMatrixFOV(fov,aspect,nearPlane,farPlane)
+  img_arr = p.getCameraImage(200,200, viewMatrix,projectionMatrix, lightDirection,lightColor,renderer=pybullet.ER_TINY_RENDERER)
+
+
+  #why isnt the index finger all red?
+  p.setDebugObjectColor(hand,indexId,(255,0,0))
+  p.setDebugObjectColor(hand,17,(255,0,0))
+  p.setDebugObjectColor(hand,19,(255,0,0))
+  p.setDebugObjectColor(hand,21,(255,0,0))
+
   p.stepSimulation()
+  
+
+  aabb = p.getAABB(hand,21) #should be 
+  print("AABB: ",aabb)
 
 p.disconnect()
