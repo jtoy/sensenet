@@ -1,5 +1,6 @@
 import time,os,math,inspect
 import pybullet as p
+import random
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(os.path.dirname(currentdir))
 os.sys.path.insert(0,parentdir)
@@ -17,7 +18,6 @@ obj_to_classify = p.loadURDF("mesh.urdf",0,0,-1)
 p.setGravity(0,0,0)
 #load the MuJoCo MJCF hand
 objects = p.loadMJCF("MPL/MPL.xml",flags=0)
-
 hand=objects[0]
 #clamp in range 400-600
 #minV = 400
@@ -30,12 +30,16 @@ middleId = 1
 indexId = 2
 thumbId = 3
 ring_id = 4
-def convertSensor(bla,bla2):
-  return 0
+def convertSensor(bla,finger_index):
+  if finger_index == indexId: # index
+    return random.uniform(-1,1)
+  else:
+    return random.random()
 
 p.setRealTimeSimulation(1)
 
 
+print("num of joints: ",p.getNumJoints(hand))
 words=[300,300,300,300,300]
 while (1):#len(words)==6):
   pink = convertSensor(words[0],pinkId)
