@@ -31,17 +31,17 @@ indexId = 2
 thumbId = 3
 ring_id = 4
 def convertSensor(bla,finger_index):
-  if finger_index == indexId: # index
+  if finger_index == indexId: 
     return random.uniform(-1,1)
   else:
     return random.random()
 
-p.setRealTimeSimulation(1)
+p.setRealTimeSimulation(0)
 
 
 print("num of joints: ",p.getNumJoints(hand))
 words=[300,300,300,300,300]
-while (1):#len(words)==6):
+while (1):
   pink = convertSensor(words[0],pinkId)
   middle = convertSensor(words[1],middleId)
   index = convertSensor(words[3],indexId)
@@ -69,6 +69,6 @@ while (1):#len(words)==6):
   p.setJointMotorControl2(hand,32,p.POSITION_CONTROL,ringpos)
   p.setJointMotorControl2(hand,34,p.POSITION_CONTROL,ringpos)
   p.setJointMotorControl2(hand,36,p.POSITION_CONTROL,ringpos)
+  p.stepSimulation()
 
-else:
-  print("Cannot find port")
+p.disconnect()
