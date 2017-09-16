@@ -6,15 +6,14 @@ currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentfram
 parentdir = os.path.dirname(os.path.dirname(currentdir))
 os.sys.path.insert(0,parentdir)
 pi = 3.14159265
+debug = False
 #first try to connect to shared memory (VR), if it fails use local GUI
-c = p.connect(p.SHARED_MEMORY)
-print(c)
-if (c<0):
-  p.connect(p.GUI)
+#c = p.connect(p.SHARED_MEMORY)
+#print(c)
+p.connect(p.GUI)
+#p.connect(p.DIRECT)
 
 obj_to_classify = p.loadURDF("mesh.urdf",0,0,-1)
-
-		
 
 p.setGravity(0,0,0)
 #load the MuJoCo MJCF hand
@@ -34,6 +33,7 @@ ring_id = 4
 def convertSensor(bla,finger_index):
   if finger_index == indexId: 
     return random.uniform(-1,1)
+    #return 0
   else:
     return 0
     #return random.random()
@@ -74,8 +74,14 @@ while (1):
 
 
   #get camera position from index finger tip, indexId, 21
-  viewMatrix = p.computeViewMatrixFromYawPitchRoll(camTargetPos,camDistance,yaw,pitch,roll,upAxisIndex)
+  link_state = p.getLinkState(hand,indexId)
+  link_p = link_state[0]
+  link_o = link_state[1]
+  print("link position :",link_p)
+  print("link orientation :",link_o)
+
   aspect = 1
+  camTargetPos = [0,0,0]
   nearPlane = 0.01
   farPlane = 1000
   yaw = 40
@@ -89,8 +95,21 @@ while (1):
   farPlane = 1000
   lightDirection = [0,1,0]
   lightColor = [1,1,1]#optional
+  fov = 60
+  dist1 = 1.
+  dist0 = 0.3
+  #viewMatrix = p.computeViewMatrixFromYawPitchRoll(camTargetPos,camDistance,yaw,pitch,roll,upAxisIndex)
+  #handpos,handorn = p.getBasePositionAndOrientation(hand)
+  handmat = p.getMatrixFromQuaternion(link_o)
+  #invhandPos,invhandOrn = p.invertTransform(handpos,handorn)
+  #linkPosInHand,linkOrnInHand = self._p.multiplyTransforms(invHandPos,invHandOrn,link_p,link_o)
+  target_pos = [link_p[0]+dist1*handmat[0],link_p[1]+dist1*handmat[3],link_p[2]+dist1*handmat[6]+0.3]
+  #target_pos = [handpos[0]+dist1*handmat[0],handpos[1]+dist1*handmat[3],handpos[2]+dist1*handmat[6]+0.3]
+  #eye_pos = [handpos[0]+dist0*handmat[0],handpos[1]+dist0*handmat[3],handpos[2]+dist0*handmat[6]+0.3]
+  up = [handmat[2],handmat[5],handmat[8]]
+  viewMatrix = p.computeViewMatrix(link_p,target_pos,up)
   projectionMatrix = p.computeProjectionMatrixFOV(fov,aspect,nearPlane,farPlane)
-  img_arr = p.getCameraImage(200,200, viewMatrix,projectionMatrix, lightDirection,lightColor,renderer=pybullet.ER_TINY_RENDERER)
+  img_arr = p.getCameraImage(200,200, viewMatrix,projectionMatrix, lightDirection,lightColor,renderer=p.ER_TINY_RENDERER)
 
 
   #why isnt the index finger all red?
@@ -103,6 +122,6 @@ while (1):
   
 
   aabb = p.getAABB(hand,21) #should be 
-  print("AABB: ",aabb)
+  #print("AABB: ",aabb)
 
 p.disconnect()
