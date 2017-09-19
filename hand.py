@@ -1,7 +1,7 @@
-import time,os,math,inspect
-import pybullet as p
+import time,os,math,inspect,re
 import random
 import matplotlib.pyplot as plt
+import pybullet as p
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(os.path.dirname(currentdir))
 os.sys.path.insert(0,parentdir)
@@ -12,13 +12,13 @@ debug = False
 #print(c)
 p.connect(p.GUI)
 #p.connect(p.DIRECT)
-
-obj_to_classify = p.loadURDF("mesh.urdf",0,0,-1)
+obj_to_classify = p.loadURDF("mesh.urdf",0,-1,0)
+#obj_to_classify = p.loadURDF("mesh.urdf",0,0,-1)
 
 p.setGravity(0,0,0)
 #load the MuJoCo MJCF hand
 objects = p.loadMJCF("MPL/MPL.xml",flags=0)
-hand=objects[0]
+hand=objects[0]  #1 total
 #clamp in range 400-600
 #minV = 400
 #maxV = 600
@@ -40,8 +40,13 @@ def convertSensor(bla,finger_index):
 
 p.setRealTimeSimulation(0)
 
-
-print("num of joints: ",p.getNumJoints(hand))
+joint_count = p.getNumJoints(hand)
+print("num of joints: ",joint_count)
+pre = re.compile('index')
+for id in range(joint_count):
+  info = p.getJointInfo(hand,id)
+  if pre.match(info[1].decode('utf-8')):
+    print("joint info:", info)
 words=[300,300,300,300,300]
 while (1):
   pink = convertSensor(words[0],pinkId)
@@ -113,10 +118,19 @@ while (1):
 
 
   #why isnt the index finger all red?
-  p.setDebugObjectColor(hand,indexId,(255,0,0))
+  #p.setDebugObjectColor(hand,indexId,(255,0,0))
+  #p.setDebugObjectColor(hand,middleId,(255,0,0))  #works
+  #p.setDebugObjectColor(hand,thumbId,(255,0,0))  #works
+  #joint info: (15, b'index_ABD', 0, 14, 13, 1, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, b'link0_17')
+  #joint info: (17, b'index_MCP', 0, 15, 14, 1, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, b'link0_19')
+  #joint info: (19, b'index_PIP', 0, 16, 15, 1, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, b'link0_21')
+  #joint info: (21, b'index_DIP', 0, 17, 16, 1, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, b'link0_23')
+  print("index id: ",indexId)
+  p.setDebugObjectColor(hand,21,(255,0,0))
+  p.setDebugObjectColor(hand,15,(255,0,0))
+  p.setDebugObjectColor(hand,2,(255,0,0))
   p.setDebugObjectColor(hand,17,(255,0,0))
   p.setDebugObjectColor(hand,19,(255,0,0))
-  p.setDebugObjectColor(hand,21,(255,0,0))
 
   p.stepSimulation()
   
