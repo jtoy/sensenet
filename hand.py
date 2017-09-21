@@ -5,9 +5,6 @@ import pybullet as p
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(os.path.dirname(currentdir))
 os.sys.path.insert(0,parentdir)
-pi = 3.14159265
-debug = False
-#first try to connect to shared memory (VR), if it fails use local GUI
 #c = p.connect(p.SHARED_MEMORY)
 #print(c)
 p.connect(p.GUI)
@@ -22,11 +19,6 @@ p.setGravity(0,0,0)
 #load the MuJoCo MJCF hand
 objects = p.loadMJCF("MPL/MPL.xml",flags=0)
 hand=objects[0]  #1 total
-#clamp in range 400-600
-#minV = 400
-#maxV = 600
-minVarray = [275,280,350,290]
-maxVarray = [450,550,500,400]
 
 pinkId = 0
 middleId = 1
@@ -80,10 +72,6 @@ while (1):
   p.setJointMotorControl2(hand,36,p.POSITION_CONTROL,ringpos)
 
 
-  #get camera position from index finger tip, indexId, 21
-  #print("link position :",link_p)
-  #print("link orientation :",link_o)
-
   aspect = 1
   camTargetPos = [0,0,0]
   nearPlane = 0.01
@@ -110,7 +98,7 @@ while (1):
   handmat = p.getMatrixFromQuaternion(link_o)
   #invhandPos,invhandOrn = p.invertTransform(handpos,handorn)
   #linkPosInHand,linkOrnInHand = self._p.multiplyTransforms(invHandPos,invHandOrn,link_p,link_o)
-  target_pos = [link_p[0]-dist1*handmat[0],link_p[1]-dist1*handmat[3],link_p[2]-dist1*handmat[6]+0.3]
+  target_pos = [link_p[0]+dist1*handmat[0],link_p[1]+dist1*handmat[3],link_p[2]+dist1*handmat[6]+0.3]
   #target_pos = [handpos[0]+dist1*handmat[0],handpos[1]+dist1*handmat[3],handpos[2]+dist1*handmat[6]+0.3]
   #eye_pos = [handpos[0]+dist0*handmat[0],handpos[1]+dist0*handmat[3],handpos[2]+dist0*handmat[6]+0.3]
   up = [handmat[2],handmat[5],handmat[8]]
