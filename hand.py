@@ -2,6 +2,10 @@ import time,os,math,inspect,re
 import random
 import matplotlib.pyplot as plt
 import pybullet as p
+#import numpy as np
+
+pi = 3.1415926535
+
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(os.path.dirname(currentdir))
 os.sys.path.insert(0,parentdir)
@@ -19,6 +23,7 @@ p.setGravity(0,0,0)
 #load the MuJoCo MJCF hand
 objects = p.loadMJCF("MPL/MPL.xml",flags=0)
 hand=objects[0]  #1 total
+print(hand)
 
 pinkId = 0
 middleId = 1
@@ -34,6 +39,54 @@ def convertSensor(finger_index):
     #return random.random()
 
 p.setRealTimeSimulation(0)
+
+offset = 0.02 # Offset from basic position
+depthThreasholdId = p.addUserDebugParameter("DepthThreashold",0.0,10.0,1.0)
+
+indexEndID = 21 # Need get position and orientation from index finger parts
+def ahead_view():
+  link_state = p.getLinkState(hand,indexEndID)
+  link_p = link_state[0]
+  link_o = link_state[1]
+  handmat = p.getMatrixFromQuaternion(link_o)
+
+  axisX = [handmat[0],handmat[3],handmat[6]]
+  axisY = [-handmat[1],-handmat[4],-handmat[7]] # Negative Y axis
+  axisZ = [handmat[2],handmat[5],handmat[8]]
+
+  eye_pos    = [link_p[0]+offset*axisY[0],link_p[1]+offset*axisY[1],link_p[2]+offset*axisY[2]]
+  target_pos = [link_p[0]+axisY[0],link_p[1]+axisY[1],link_p[2]+axisY[2]] # target position based by axisY, not X
+  up = axisZ # Up is Z axis
+  viewMatrix = p.computeViewMatrix(eye_pos,target_pos,up)
+
+  #p.addUserDebugLine(link_p,[link_p[0]+0.1*axisY[0],link_p[1]+0.1*axisY[1],link_p[2]+0.1*axisY[2]],[1,0,0],2,0.05) # Debug line in camera direction
+  p.addUserDebugLine(link_p,[link_p[0]+0.1*axisY[0],link_p[1]+0.1*axisY[1],link_p[2]+0.1*axisY[2]],[1,0,0],2,0.2)
+
+  return viewMatrix
+
+def down_view():
+  link_state = p.getLinkState(hand,indexEndID)
+  link_p = link_state[0]
+  link_o = link_state[1]
+  handmat = p.getMatrixFromQuaternion(link_o)
+
+  axisX = [handmat[0],handmat[3],handmat[6]]
+  axisY = [-handmat[1],-handmat[4],-handmat[7]] # Negative Y axis
+  axisZ = [handmat[2],handmat[5],handmat[8]]
+
+  eye_pos    = [link_p[0]-offset*axisZ[0],link_p[1]-offset*axisZ[1],link_p[2]-offset*axisZ[2]]
+  target_pos = [link_p[0]-axisZ[0],link_p[1]-axisZ[1],link_p[2]-axisZ[2]] # Target position based on negative Z axis
+  up = axisY # Up is Y axis
+  viewMatrix = p.computeViewMatrix(eye_pos,target_pos,up)
+
+  p.addUserDebugLine(link_p,[link_p[0]-0.1*axisZ[0],link_p[1]-0.1*axisZ[1],link_p[2]-0.1*axisZ[2]],[1,0,0],2,0.05) # Debug line in camera direction
+
+  return viewMatrix
+
+downCameraOn = False
+cYawSlider = p.addUserDebugParameter("cyaw",-100,100,30)
+cDistanceSlider = p.addUserDebugParameter("cdisance",-100,100,30)
+cPitchSlider = p.addUserDebugParameter("cpitch",-100,100,30)
 
 joint_count = p.getNumJoints(hand)
 print("num of joints: ",joint_count)
@@ -54,6 +107,7 @@ while (1):
   p.setJointMotorControl2(hand,11,p.POSITION_CONTROL,thumb)
   p.setJointMotorControl2(hand,13,p.POSITION_CONTROL,thumb)
 
+  # That's index finger parts
   p.setJointMotorControl2(hand,17,p.POSITION_CONTROL,index)
   p.setJointMotorControl2(hand,19,p.POSITION_CONTROL,index)
   p.setJointMotorControl2(hand,21,p.POSITION_CONTROL,index)
@@ -71,7 +125,6 @@ while (1):
   p.setJointMotorControl2(hand,34,p.POSITION_CONTROL,ringpos)
   p.setJointMotorControl2(hand,36,p.POSITION_CONTROL,ringpos)
 
-
   aspect = 1
   camTargetPos = [0,0,0]
   nearPlane = 0.01
@@ -84,47 +137,37 @@ while (1):
   pixelWidth = 320
   pixelHeight = 240
   nearPlane = 0.01
-  farPlane = 1000
+  farPlane = 0.05
   lightDirection = [0,1,0]
   lightColor = [1,1,1]#optional
-  fov = 60
-  dist1 = 1.
-  dist0 = 0.3
-  #viewMatrix = p.computeViewMatrixFromYawPitchRoll(camTargetPos,camDistance,yaw,pitch,roll,upAxisIndex)
-  #handpos,handorn = p.getBasePositionAndOrientation(hand)
-  link_state = p.getLinkState(hand,indexId)
-  link_p = link_state[0]
-  link_o = link_state[1]
-  handmat = p.getMatrixFromQuaternion(link_o)
-  #invhandPos,invhandOrn = p.invertTransform(handpos,handorn)
-  #linkPosInHand,linkOrnInHand = self._p.multiplyTransforms(invHandPos,invHandOrn,link_p,link_o)
-  target_pos = [link_p[0]+dist1*handmat[0],link_p[1]+dist1*handmat[3],link_p[2]+dist1*handmat[6]+0.3]
-  #target_pos = [handpos[0]+dist1*handmat[0],handpos[1]+dist1*handmat[3],handpos[2]+dist1*handmat[6]+0.3]
-  #eye_pos = [handpos[0]+dist0*handmat[0],handpos[1]+dist0*handmat[3],handpos[2]+dist0*handmat[6]+0.3]
-  up = [handmat[2],handmat[5],handmat[8]]
-  viewMatrix = p.computeViewMatrix(link_p,target_pos,up)
+  fov = 10 
+
+  key = p.getKeyboardEvents()
+  for k in key.keys():
+    if k == 32 and key[k] == 3:
+      if downCameraOn: downCameraOn = False
+      else: downCameraOn = True
+  if downCameraOn: viewMatrix = down_view()
+  else: viewMatrix = ahead_view()
   projectionMatrix = p.computeProjectionMatrixFOV(fov,aspect,nearPlane,farPlane)
-  img_arr = p.getCameraImage(200,200, viewMatrix,projectionMatrix, lightDirection,lightColor,renderer=p.ER_TINY_RENDERER)
+  w,h,img_arr,depths,mask = p.getCameraImage(200,200, viewMatrix,projectionMatrix, lightDirection,lightColor,renderer=p.ER_TINY_RENDERER)
 
+  #print(img_arr)
+  depthThreashold = p.readUserDebugParameter(depthThreasholdId)
+  cYaw = p.readUserDebugParameter(cYawSlider)
+  cPitch = p.readUserDebugParameter(cPitchSlider)
+  cDistance = p.readUserDebugParameter(cDistanceSlider)
+  #p.resetDebugVisualizerCamera( cameraDistance=cDistance, cameraYaw=cYaw, cameraPitch=cPitch, cameraTargetPosition=[0,0,0])
 
-  #why isnt the index finger all red?
-  #p.setDebugObjectColor(hand,indexId,(255,0,0))
-  #p.setDebugObjectColor(hand,middleId,(255,0,0))  #works
-  #p.setDebugObjectColor(hand,thumbId,(255,0,0))  #works
-  #joint info: (15, b'index_ABD', 0, 14, 13, 1, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, b'link0_17')
-  #joint info: (17, b'index_MCP', 0, 15, 14, 1, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, b'link0_19')
-  #joint info: (19, b'index_PIP', 0, 16, 15, 1, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, b'link0_21')
-  #joint info: (21, b'index_DIP', 0, 17, 16, 1, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, b'link0_23')
-  #indexId: 2
-  p.setDebugObjectColor(hand,21,(255,0,0))
-  p.changeVisualShape(hand,2,rgbaColor=(255,0,0,0))
-  p.setDebugObjectColor(hand,15,(255,0,0))
-  p.setDebugObjectColor(hand,indexId,(255,0,0))
-  p.setDebugObjectColor(hand,17,(255,0,0))
-  p.setDebugObjectColor(hand,19,(255,0,0))
+  avgDepth = 0.0
+  for y in range(0,h):
+    for x in range(0,w):
+      avgDepth += depths[x][y]
+  avgDepth /= w*h
+  if avgDepth < depthThreashold:
+    print("Touch")
 
   p.stepSimulation()
-  
 
   aabb = p.getAABB(hand,21) #should be 
   #print("AABB: ",aabb)
