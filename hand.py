@@ -19,6 +19,8 @@ obj_z = 0
 obj_to_classify = p.loadURDF("mesh.urdf",obj_x,obj_y,obj_z)
 #obj_to_classify = p.loadURDF("mesh.urdf",0,0,-1)
 
+move = 0.01
+moveSlider = p.addUserDebugParameter("move",0.001,1,0.01)
 p.setGravity(0,0,0)
 #load the MuJoCo MJCF hand
 objects = p.loadMJCF("MPL/MPL.xml",flags=0)
@@ -140,13 +142,30 @@ while (1):
   farPlane = 0.05
   lightDirection = [0,1,0]
   lightColor = [1,1,1]#optional
-  fov = 10 
+  fov = 50  #10 or 50
 
   key = p.getKeyboardEvents()
   for k in key.keys():
     if k == 32 and key[k] == 3:
       if downCameraOn: downCameraOn = False
       else: downCameraOn = True
+    else:
+      hand_po = p.getBasePositionAndOrientation(hand)
+      move = p.readUserDebugParameter(moveSlider)
+      if k == 65298: #down
+        p.resetBasePositionAndOrientation(hand,(hand_po[0][0]+move,hand_po[0][1],hand_po[0][2]),hand_po[1])
+      elif k == 65297: #up
+        p.resetBasePositionAndOrientation(hand,(hand_po[0][0]-move,hand_po[0][1],hand_po[0][2]),hand_po[1])
+      elif k == 65295: #left
+        p.resetBasePositionAndOrientation(hand,(hand_po[0][0],hand_po[0][1]+move,hand_po[0][2]),hand_po[1])
+      elif k == 65296: #right
+        p.resetBasePositionAndOrientation(hand,(hand_po[0][0],hand_po[0][1]-move,hand_po[0][2]),hand_po[1])
+      elif k == 44: #<
+        p.resetBasePositionAndOrientation(hand,(hand_po[0][0],hand_po[0][1],hand_po[0][2]+move),hand_po[1])
+      elif k == 46: #>
+        p.resetBasePositionAndOrientation(hand,(hand_po[0][0],hand_po[0][1],hand_po[0][2]-move),hand_po[1])
+
+    print(k)
   if downCameraOn: viewMatrix = down_view()
   else: viewMatrix = ahead_view()
   projectionMatrix = p.computeProjectionMatrixFOV(fov,aspect,nearPlane,farPlane)
