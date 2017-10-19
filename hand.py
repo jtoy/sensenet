@@ -2,7 +2,7 @@ import time,os,math,inspect,re
 import random
 import matplotlib.pyplot as plt
 import pybullet as p
-#import numpy as np
+import numpy as np
 
 pi = 3.1415926535
 
@@ -34,8 +34,8 @@ thumbId = 3
 ring_id = 4
 def convertSensor(finger_index):
   if finger_index == indexId: 
-    return random.uniform(-1,1)
-    #return 0
+    #return random.uniform(-1,1)
+    return 0
   else:
     return 0
     #return random.random()
@@ -171,6 +171,10 @@ while (1):
   projectionMatrix = p.computeProjectionMatrixFOV(fov,aspect,nearPlane,farPlane)
   w,h,img_arr,depths,mask = p.getCameraImage(200,200, viewMatrix,projectionMatrix, lightDirection,lightColor,renderer=p.ER_TINY_RENDERER)
 
+  red_dimension = img_arr[:,:,0].flatten()  #TODO change this so any RGB value returns 1, anything else is 0
+  #observation = np.absolute(red_dimension-255)%1
+  observation = (np.absolute(red_dimension -255) > 0).astype(int)
+  print("data",observation[0:50])
   #print(img_arr)
   depthThreashold = p.readUserDebugParameter(depthThreasholdId)
   cYaw = p.readUserDebugParameter(cYawSlider)

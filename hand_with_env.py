@@ -17,21 +17,25 @@ env = TouchEnv()
 print("action space: ",env.action_space())
 SavedAction = namedtuple('SavedAction', ['action', 'value'])
 class Policy(nn.Module):
-  def __init__(self):
+  def __init__(self,action_space_n):
     super(Policy, self).__init__()
     #self.fc1 = nn.Linear(4, 128)
     #self.tanh = nn.Tanh()
     #self.fc2 = nn.Linear(128, 10)
-    #self.init_weights()
-    self.affine1 = nn.Linear(40000, 128)
-    self.action_head = nn.Linear(128, 2)
+    self.affine1 = nn.Linear(40000, 256)
+    self.action1 = nn.Linear(256, 128)
+    self.value1 = nn.Linear(256, 128)
+    self.action_head = nn.Linear(128, action_space_n)
     self.value_head = nn.Linear(128, 1)
+    self.classification_head = nn.Linear(128, 1) #class count
     self.saved_actions = []
     self.rewards = []
+    self.init_weights()
 
   def init_weights(self):
-    self.fc1.weight.data.uniform_(-0.1, 0.1)
-    self.fc2.weight.data.uniform_(-0.1, 0.1)
+    self.affine1.weight.data.uniform_(-0.1, 0.1)
+    self.action1.weight.data.uniform_(-0.1, 0.1)
+    self.value1.weight.data.uniform_(-0.1, 0.1)
 
   def forward(self, x):
     #out = self.fc1(x)
@@ -39,13 +43,17 @@ class Policy(nn.Module):
     #out = self.fc2(out)
     #return out
     x = F.relu(self.affine1(x))
-    action_scores = self.action_head(x)
-    state_values = self.value_head(x)
+    xa = F.relu(self.action1(x))
+    xv = F.relu(self.value1(x))
+    action_scores = self.action_head(xa)
+    state_values = self.value_head(xv)
     return F.softmax(action_scores), state_values
 
 parser = argparse.ArgumentParser(description='TouchNet actor-critic example')
 parser.add_argument('--gamma', type=float, default=0.99, metavar='G',
                     help='discount factor (default: 0.99)')
+parser.add_argument('--epsilon', type=float, default=0.6, metavar='G',
+                    help='epsilon value for random action (default: 0.6)')
 parser.add_argument('--seed', type=int, default=42, metavar='N',
                     help='random seed (default: 42)')
 parser.add_argument('--render', action='store_true',
@@ -55,13 +63,15 @@ parser.add_argument('--log-interval', type=int, default=10, metavar='N',
 args = parser.parse_args()
 
 
-def select_action(state):
-  state = torch.from_numpy(state).float().unsqueeze(0)
-  #print(state)
-  probs, state_value = model(Variable(state))
-  action = probs.multinomial()
-  model.saved_actions.append(SavedAction(action, state_value))
-  return action.data
+def select_action(state,n_actions,epsilon=0.6):
+  if np.random.rand() < epsilon:
+    return np.random.choice(n_actions)
+  else:
+    state = torch.from_numpy(state).float().unsqueeze(0)
+    probs, state_value = model(Variable(state))
+    action = probs.multinomial()
+    model.saved_actions.append(SavedAction(action, state_value))
+    return action.data[0][0]
 
 def finish_episode():
   R = 0
@@ -86,18 +96,19 @@ def finish_episode():
   del model.saved_actions[:]
 
 #train
-model = Policy()
+model = Policy(env.action_space_n())
 criterion = nn.MSELoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 running_reward = 10
+n_actions = len(env.action_space())
 for i_episode in count(1):
   print("training on a new object")
   observation = env.reset()
   for t in range(1000):
     #action = random.sample(env.action_space(),1)[0]
-    action = select_action(observation)
-    print("action:",action)
-    observation, reward, done, info = env.step(action[0][0])
+    action = select_action(observation,n_actions,args.epsilon)
+    #print("new action:",action)
+    observation, reward, done, info = env.step(action)
     #observation, reward, done, info = env.step(action)
     model.rewards.append(reward)
     if done:
@@ -105,12 +116,17 @@ for i_episode in count(1):
   running_reward = running_reward * 0.99 + t * 0.01
   finish_episode()
 
+  if i_episode % args.log_interval == 0:
+    print('Episode {}\tLast length: {:5d}\tAverage length: {:.2f}'.format(i_episode, t, running_reward))
+  if running_reward > 5000: #env.spec.reward_threshold:
+    print("Solved! Running reward is now {} and the last episode runs to {} time steps!".format(running_reward, t))
+    break
 #test
-for i_episode in range(20):
-  print("testing on a new object")
-  observation = env.reset()
-  for t in range(500):
-    action = random.sample(env.action_space(),1)[0]
-    observation, reward, done, info = env.step(action)
-  print("guessing object type","foo")
-env.disconnect()
+#for i_episode in range(10):
+#  print("testing on a new object")
+#  observation = env.reset()
+#  for t in range(500):
+#    action = random.sample(env.action_space(),1)[0]
+#    observation, reward, done, info = env.step(action)
+#  print("guessing object type","foo")
+#env.disconnect()
