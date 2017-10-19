@@ -46,6 +46,7 @@ parser.add_argument('--epsilon', type=float, default=0.6, metavar='G', help='eps
 parser.add_argument('--seed', type=int, default=42, metavar='N', help='random seed (default: 42)')
 parser.add_argument('--log-interval', type=int, default=10, metavar='N', help='interval between training status logs (default: 10)') 
 parser.add_argument('--render', action='store_true', help='render the environment')
+parser.add_argument('--gpu', action='store_true', help='use GPU')
 args = parser.parse_args()
 
 
@@ -85,6 +86,8 @@ def finish_episode():
 env = TouchEnv(args)
 print("action space: ",env.action_space())
 model = Policy(env.observation_space(),env.action_space_n())
+if args.gpu and torch.cuda.is_available():
+  model.cuda()
 criterion = nn.MSELoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 running_reward = 10
