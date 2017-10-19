@@ -13,8 +13,6 @@ import torch.optim as optim
 import torch.autograd as autograd
 from torch.autograd import Variable
 
-env = TouchEnv()
-print("action space: ",env.action_space())
 SavedAction = namedtuple('SavedAction', ['action', 'value'])
 class Policy(nn.Module):
   def __init__(self,observation_space_n,action_space_n):
@@ -35,10 +33,6 @@ class Policy(nn.Module):
     self.value1.weight.data.uniform_(-0.1, 0.1)
 
   def forward(self, x):
-    #out = self.fc1(x)
-    #out = self.tanh(out)
-    #out = self.fc2(out)
-    #return out
     x = F.relu(self.affine1(x))
     xa = F.relu(self.action1(x))
     xv = F.relu(self.value1(x))
@@ -47,16 +41,11 @@ class Policy(nn.Module):
     return F.softmax(action_scores), state_values
 
 parser = argparse.ArgumentParser(description='TouchNet actor-critic example')
-parser.add_argument('--gamma', type=float, default=0.99, metavar='G',
-                    help='discount factor (default: 0.99)')
-parser.add_argument('--epsilon', type=float, default=0.6, metavar='G',
-                    help='epsilon value for random action (default: 0.6)')
-parser.add_argument('--seed', type=int, default=42, metavar='N',
-                    help='random seed (default: 42)')
-parser.add_argument('--render', action='store_true',
-                    help='render the environment')
-parser.add_argument('--log-interval', type=int, default=10, metavar='N',
-                    help='interval between training status logs (default: 10)')
+parser.add_argument('--gamma', type=float, default=0.99, metavar='G', help='discount factor (default: 0.99)')
+parser.add_argument('--epsilon', type=float, default=0.6, metavar='G', help='epsilon value for random action (default: 0.6)')
+parser.add_argument('--seed', type=int, default=42, metavar='N', help='random seed (default: 42)')
+parser.add_argument('--log-interval', type=int, default=10, metavar='N', help='interval between training status logs (default: 10)') 
+parser.add_argument('--render', action='store_true', help='render the environment')
 args = parser.parse_args()
 
 
@@ -93,20 +82,17 @@ def finish_episode():
   del model.saved_actions[:]
 
 #train
+env = TouchEnv(args)
+print("action space: ",env.action_space())
 model = Policy(env.observation_space(),env.action_space_n())
 criterion = nn.MSELoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 running_reward = 10
-n_actions = len(env.action_space())
 for i_episode in count(1):
-  print("training on a new object")
   observation = env.reset()
   for t in range(500):
-    #action = random.sample(env.action_space(),1)[0]
-    action = select_action(observation,n_actions,args.epsilon)
-    #print("new action:",action)
+    action = select_action(observation,env.action_space_n(),args.epsilon)
     observation, reward, done, info = env.step(action)
-    #observation, reward, done, info = env.step(action)
     model.rewards.append(reward)
     if done:
       break
