@@ -17,12 +17,9 @@ env = TouchEnv()
 print("action space: ",env.action_space())
 SavedAction = namedtuple('SavedAction', ['action', 'value'])
 class Policy(nn.Module):
-  def __init__(self,action_space_n):
+  def __init__(self,observation_space_n,action_space_n):
     super(Policy, self).__init__()
-    #self.fc1 = nn.Linear(4, 128)
-    #self.tanh = nn.Tanh()
-    #self.fc2 = nn.Linear(128, 10)
-    self.affine1 = nn.Linear(40000, 256)
+    self.affine1 = nn.Linear(observation_space_n, 256)
     self.action1 = nn.Linear(256, 128)
     self.value1 = nn.Linear(256, 128)
     self.action_head = nn.Linear(128, action_space_n)
@@ -96,7 +93,7 @@ def finish_episode():
   del model.saved_actions[:]
 
 #train
-model = Policy(env.action_space_n())
+model = Policy(env.observation_space(),env.action_space_n())
 criterion = nn.MSELoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 running_reward = 10
@@ -104,7 +101,7 @@ n_actions = len(env.action_space())
 for i_episode in count(1):
   print("training on a new object")
   observation = env.reset()
-  for t in range(1000):
+  for t in range(500):
     #action = random.sample(env.action_space(),1)[0]
     action = select_action(observation,n_actions,args.epsilon)
     #print("new action:",action)
