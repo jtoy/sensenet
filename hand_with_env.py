@@ -22,7 +22,6 @@ class Policy(nn.Module):
     self.value1 = nn.Linear(256, 128)
     self.action_head = nn.Linear(128, action_space_n)
     self.value_head = nn.Linear(128, 1)
-    self.classification_head = nn.Linear(128, 1) #class count
     self.saved_actions = []
     self.rewards = []
     self.init_weights()
@@ -40,6 +39,28 @@ class Policy(nn.Module):
     state_values = self.value_head(xv)
     return F.softmax(action_scores), state_values
 
+class CNN(nn.Module):
+  def __init__(self):
+    super(CNN, self).__init__()
+    self.layer1 = nn.Sequential(
+      nn.Conv2d(1, 16, kernel_size=5, padding=2),
+      nn.BatchNorm2d(16),
+      nn.ReLU(),
+      nn.MaxPool2d(2))
+    self.layer2 = nn.Sequential(
+      nn.Conv2d(16, 32, kernel_size=5, padding=2),
+      nn.BatchNorm2d(32),
+      nn.ReLU(),
+      nn.MaxPool2d(2))
+    self.fc = nn.Linear(7*7*32, 2)
+      
+  def forward(self, x):
+    out = self.layer1(x)
+    out = self.layer2(out)
+    out = out.view(out.size(0), -1)
+    out = self.fc(out)
+    return out
+
 parser = argparse.ArgumentParser(description='TouchNet actor-critic example')
 parser.add_argument('--gamma', type=float, default=0.99, metavar='G', help='discount factor (default: 0.99)')
 parser.add_argument('--epsilon', type=float, default=0.6, metavar='G', help='epsilon value for random action (default: 0.6)')
@@ -47,6 +68,8 @@ parser.add_argument('--seed', type=int, default=42, metavar='N', help='random se
 parser.add_argument('--log-interval', type=int, default=10, metavar='N', help='interval between training status logs (default: 10)') 
 parser.add_argument('--render', action='store_true', help='render the environment')
 parser.add_argument('--gpu', action='store_true', help='use GPU')
+parser.add_argument('--model_path', type=str, help='path to store/retrieve model at')
+parser.add_argument('--mode', type=str, default="train", help='train/test/all model')
 args = parser.parse_args()
 
 
@@ -86,33 +109,67 @@ def finish_episode():
 env = TouchEnv(args)
 print("action space: ",env.action_space())
 model = Policy(env.observation_space(),env.action_space_n())
+cnn = CNN()
 if args.gpu and torch.cuda.is_available():
   model.cuda()
+  cnn.cuda()
+if args.model_path and os.path.exists(args.model_path):
+  model.load_state_dict(torch.load(args.model_path))
 criterion = nn.MSELoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
-running_reward = 10
-for i_episode in count(1):
-  observation = env.reset()
-  for t in range(500):
-    action = select_action(observation,env.action_space_n(),args.epsilon)
-    observation, reward, done, info = env.step(action)
-    model.rewards.append(reward)
-    if done:
-      break
-  running_reward = running_reward * 0.99 + t * 0.01
-  finish_episode()
 
-  if i_episode % args.log_interval == 0:
-    print('Episode {}\tLast length: {:5d}\tAverage length: {:.2f}'.format(i_episode, t, running_reward))
-  if running_reward > 5000: #env.spec.reward_threshold:
-    print("Solved! Running reward is now {} and the last episode runs to {} time steps!".format(running_reward, t))
-    break
-#test
-#for i_episode in range(10):
-#  print("testing on a new object")
-#  observation = env.reset()
-#  for t in range(500):
-#    action = random.sample(env.action_space(),1)[0]
-#    observation, reward, done, info = env.step(action)
-#  print("guessing object type","foo")
-#env.disconnect()
+classifier_criterion = nn.CrossEntropyLoss()
+classifier_optimizer = torch.optim.Adam(cnn.parameters(), lr=0.001)
+
+running_reward = 10
+batch_size = 32
+batch = []
+labels = []
+if args.mode == "train" or args.mode == "all":
+  for i_episode in count(1):
+    observation = env.reset()
+    print("episode: ", i_episode)
+    for t in range(500):
+      action = select_action(observation,env.action_space_n(),args.epsilon)
+      observation, reward, done, info = env.step(action)
+      model.rewards.append(reward)
+      
+      if np.amax(observation) > 0:  #touching!
+        print("touching!")
+        if len(batch) > batch_size:
+          #TODO GPU support
+          batch = Variable(batch)
+          labels = Variable(labels)
+          classifier_optimizer.zero_grad()
+          outputs = cnn(batch)
+          loss = classifier_criterion(outputs, labels)
+          loss.backward()
+          classifier_optimizer.step()
+          print ('Loss: %.4f' %(loss.data[0]))
+          batch = []
+          labels = []
+        else:
+          batch.append(observation)
+          labels.append(env.class_label)
+      if done:
+        break
+    running_reward = running_reward * 0.99 + t * 0.01
+    finish_episode()
+
+    if i_episode % args.log_interval == 0:
+      print('Episode {}\tLast length: {:5d}\tAverage length: {:.2f}'.format(i_episode, t, running_reward))
+    if running_reward > 5000: #env.spec.reward_threshold:
+      print("Solved! Running reward is now {} and the last episode runs to {} time steps!".format(running_reward, t))
+      break
+    if args.model_path:
+      torch.save(model.state_dict(), args.model_path)
+      #torch.save(model.state_dict(), os.path.join(args.model_path, 'model-%d.pkl' %(i_episode+1)))
+elif args.mode == "test" or args.mode == "all":
+  #test
+  for i_episode in range(10):
+    print("testing on a new object")
+    observation = env.reset()
+    for t in range(500):
+      action = random.sample(env.action_space(),1)[0]
+      observation, reward, done, info = env.step(action)
+    print("guessing object type","foo")
