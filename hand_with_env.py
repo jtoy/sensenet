@@ -119,8 +119,8 @@ cnn = CNN(env.classification_n())
 if args.gpu and torch.cuda.is_available():
   model.cuda()
   cnn.cuda()
-if args.model_path and os.path.exists(args.model_path):
-  model.load_state_dict(torch.load(args.model_path))
+#if args.model_path and os.path.exists(args.model_path):
+#  model.load_state_dict(torch.load(args.model_path))
 
 criterion = nn.MSELoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
