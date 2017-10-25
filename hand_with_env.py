@@ -40,7 +40,7 @@ class Policy(nn.Module):
     return F.softmax(action_scores), state_values
 
 class CNN(nn.Module):
-  def __init__(self):
+  def __init__(self,classification_n):
     super(CNN, self).__init__()
     self.layer1 = nn.Sequential(
       nn.Conv2d(1, 16, kernel_size=5, padding=2),
@@ -52,12 +52,17 @@ class CNN(nn.Module):
       nn.BatchNorm2d(32),
       nn.ReLU(),
       nn.MaxPool2d(2))
-    self.fc = nn.Linear(7*7*32, 2)
+    #self.fc = nn.Linear(7*7*32, 2)
+    self.fc = nn.Linear(80000, classification_n)
       
   def forward(self, x):
+    x = x.unsqueeze(1).float()
+    #print("size",x.size())
     out = self.layer1(x)
     out = self.layer2(out)
+    #print("size before",out.size())
     out = out.view(out.size(0), -1)
+    #print("size after",out.size())
     out = self.fc(out)
     return out
 
@@ -65,6 +70,7 @@ parser = argparse.ArgumentParser(description='TouchNet actor-critic example')
 parser.add_argument('--gamma', type=float, default=0.99, metavar='G', help='discount factor (default: 0.99)')
 parser.add_argument('--epsilon', type=float, default=0.6, metavar='G', help='epsilon value for random action (default: 0.6)')
 parser.add_argument('--seed', type=int, default=42, metavar='N', help='random seed (default: 42)')
+parser.add_argument('--batch_size', type=int, default=42, metavar='N', help='batch size (default: 42)')
 parser.add_argument('--log-interval', type=int, default=10, metavar='N', help='interval between training status logs (default: 10)') 
 parser.add_argument('--render', action='store_true', help='render the environment')
 parser.add_argument('--gpu', action='store_true', help='use GPU')
@@ -109,12 +115,13 @@ def finish_episode():
 env = TouchEnv(args)
 print("action space: ",env.action_space())
 model = Policy(env.observation_space(),env.action_space_n())
-cnn = CNN()
+cnn = CNN(env.classification_n())
 if args.gpu and torch.cuda.is_available():
   model.cuda()
   cnn.cuda()
 if args.model_path and os.path.exists(args.model_path):
   model.load_state_dict(torch.load(args.model_path))
+
 criterion = nn.MSELoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
@@ -122,22 +129,28 @@ classifier_criterion = nn.CrossEntropyLoss()
 classifier_optimizer = torch.optim.Adam(cnn.parameters(), lr=0.001)
 
 running_reward = 10
-batch_size = 32
 batch = []
 labels = []
 if args.mode == "train" or args.mode == "all":
   for i_episode in count(1):
     observation = env.reset()
     print("episode: ", i_episode)
-    for t in range(500):
+    for t in range(1000):
       action = select_action(observation,env.action_space_n(),args.epsilon)
       observation, reward, done, info = env.step(action)
       model.rewards.append(reward)
       
       if np.amax(observation) > 0:  #touching!
         print("touching!")
-        if len(batch) > batch_size:
+        if len(batch) > args.batch_size:
           #TODO GPU support
+          #batch = torch.from_numpy(np.asarray(batch))
+          batch = torch.LongTensor(torch.from_numpy(np.asarray(batch)))
+          labels = torch.from_numpy(np.asarray(labels))
+          #labels = torch.LongTensor(torch.from_numpy(np.asarray(labels)))
+          if args.gpu and torch.cuda.is_available():
+            batch = batch.cuda()
+            labels = labels.cuda()
           batch = Variable(batch)
           labels = Variable(labels)
           classifier_optimizer.zero_grad()
@@ -149,7 +162,7 @@ if args.mode == "train" or args.mode == "all":
           batch = []
           labels = []
         else:
-          batch.append(observation)
+          batch.append(observation.reshape(200,200))
           labels.append(env.class_label)
       if done:
         break
@@ -162,8 +175,8 @@ if args.mode == "train" or args.mode == "all":
       print("Solved! Running reward is now {} and the last episode runs to {} time steps!".format(running_reward, t))
       break
     if args.model_path:
-      torch.save(model.state_dict(), args.model_path)
-      #torch.save(model.state_dict(), os.path.join(args.model_path, 'model-%d.pkl' %(i_episode+1)))
+      torch.save(model.state_dict(), os.path.join(args.model_path, 'policy.pkl' ))
+      torch.save(model.state_dict(), os.path.join(args.model_path, 'cnn.pkl' ))
 elif args.mode == "test" or args.mode == "all":
   #test
   for i_episode in range(10):
