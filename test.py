@@ -25,46 +25,14 @@ p.setGravity(0,0,0)
 #load the MuJoCo MJCF hand
 objects = p.loadMJCF("MPL/MPL.xml",flags=0)
 hand=objects[0]  #1 total
-print(hand)
-
-pinkId = 0
-middleId = 1
-indexId = 2
-thumbId = 3
-ring_id = 4
-def convertSensor(finger_index):
-  return 0
 
 p.setRealTimeSimulation(0)
 
 offset = 0.02 # Offset from basic position
 offset1 = 0.2 # Offset from basic position
-depthThreasholdId = p.addUserDebugParameter("DepthThreashold",0.0,10.0,1.0)
 
 indexEndID = 21 # Need get position and orientation from index finger parts
-def ahead_view():
-  link_state = p.getLinkState(hand,indexEndID)
-  link_p = link_state[0]
-  link_o = link_state[1]
-  handmat = p.getMatrixFromQuaternion(link_o)
 
-  axisX = [handmat[0],handmat[3],handmat[6]]
-  axisY = [-handmat[1],-handmat[4],-handmat[7]] # Negative Y axis
-  axisZ = [handmat[2],handmat[5],handmat[8]]
-
-  eye_pos    = [link_p[0]+offset*axisY[0],link_p[1]+offset*axisY[1],link_p[2]+offset*axisY[2]]
-  target_pos = [link_p[0]+offset1*axisY[0],link_p[1]+offset1*axisY[1],link_p[2]+offset1*axisY[2]] # target position based by axisY, not X
-  up = axisZ # Up is Z axis
-  viewMatrix = p.computeViewMatrix(eye_pos,target_pos,up)
-
-  #p.addUserDebugLine(link_p,[link_p[0]+0.1*axisY[0],link_p[1]+0.1*axisY[1],link_p[2]+0.1*axisY[2]],[1,0,0],2,0.05) # Debug line in camera direction
-  p.addUserDebugLine(link_p,[link_p[0]+0.1*axisY[0],link_p[1]+0.1*axisY[1],link_p[2]+0.1*axisY[2]],[1,0,0],2,0.2)
-
-  return viewMatrix
-
-cYawSlider = p.addUserDebugParameter("cyaw",-100,100,30)
-cDistanceSlider = p.addUserDebugParameter("cdisance",-100,100,30)
-cPitchSlider = p.addUserDebugParameter("cpitch",-100,100,30)
 
 while (1):
   pink = 0
@@ -72,7 +40,6 @@ while (1):
   index = 0
   thumb = 0
   ring = 0
-
   p.setJointMotorControl2(hand,7,p.POSITION_CONTROL,pi/4.)	
   p.setJointMotorControl2(hand,9,p.POSITION_CONTROL,thumb+pi/10)
   p.setJointMotorControl2(hand,11,p.POSITION_CONTROL,thumb)
@@ -117,7 +84,23 @@ while (1):
       elif k == 46: #>
         p.resetBasePositionAndOrientation(hand,(hand_po[0][0],hand_po[0][1],hand_po[0][2]-move),hand_po[1])
 
-  viewMatrix = ahead_view()
+  link_state = p.getLinkState(hand,indexEndID)
+  link_p = link_state[0]
+  link_o = link_state[1]
+  handmat = p.getMatrixFromQuaternion(link_o)
+
+  axisX = [handmat[0],handmat[3],handmat[6]]
+  axisY = [-handmat[1],-handmat[4],-handmat[7]] # Negative Y axis
+  axisZ = [handmat[2],handmat[5],handmat[8]]
+
+  eye_pos    = [link_p[0]+offset*axisY[0],link_p[1]+offset*axisY[1],link_p[2]+offset*axisY[2]]
+  target_pos = [link_p[0]+offset1*axisY[0],link_p[1]+offset1*axisY[1],link_p[2]+offset1*axisY[2]] # target position based by axisY, not X
+  up = axisZ # Up is Z axis
+  viewMatrix = p.computeViewMatrix(eye_pos,target_pos,up)
+
+  #p.addUserDebugLine(link_p,[link_p[0]+0.1*axisY[0],link_p[1]+0.1*axisY[1],link_p[2]+0.1*axisY[2]],[1,0,0],2,0.05) # Debug line in camera direction
+  p.addUserDebugLine(link_p,[link_p[0]+0.1*axisY[0],link_p[1]+0.1*axisY[1],link_p[2]+0.1*axisY[2]],[1,0,0],2,0.2)
+
   aspect = 1
   camTargetPos = [0,0,0]
   nearPlane = 0.01
@@ -141,16 +124,6 @@ while (1):
   projectionMatrix = p.computeProjectionMatrixFOV(fov,aspect,nearPlane,farPlane)
   w,h,img_arr,depths,mask = p.getCameraImage(200,200, viewMatrix,projectionMatrix, lightDirection,lightColor,renderer=p.ER_TINY_RENDERER)
 
-  red_dimension = img_arr[:,:,0].flatten()  #TODO change this so any RGB value returns 1, anything else is 0
-  #observation = np.absolute(red_dimension-255)%1
-  observation = (np.absolute(red_dimension -255) > 0).astype(int)
-  #print("data",observation)
-  #print(img_arr)
-  depthThreashold = p.readUserDebugParameter(depthThreasholdId)
-  cYaw = p.readUserDebugParameter(cYawSlider)
-  cPitch = p.readUserDebugParameter(cPitchSlider)
-  cDistance = p.readUserDebugParameter(cDistanceSlider)
-  #p.resetDebugVisualizerCamera( cameraDistance=cDistance, cameraYaw=cYaw, cameraPitch=cPitch, cameraTargetPosition=[0,0,0])
   #p.resetDebugVisualizerCamera( cameraDistance=cDistance, cameraYaw=cYaw, cameraPitch=cPitch, cameraTargetPosition=[0,0,0])
   p.stepSimulation()
 
