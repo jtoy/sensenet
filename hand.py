@@ -21,6 +21,10 @@ obj_to_classify = p.loadURDF("mesh.urdf",obj_x,obj_y,obj_z)
 
 move = 0.01
 moveSlider = p.addUserDebugParameter("move",0.001,1,0.01)
+near_plane_slider = p.addUserDebugParameter("nearplane",0.001,1,0.01)
+far_plane_slider = p.addUserDebugParameter("farplane",0.001,1,0.05)
+fov_slider = p.addUserDebugParameter("fov",-100,100,50)
+aspect_slider= p.addUserDebugParameter("aspect",-10,10,1)
 p.setGravity(0,0,0)
 #load the MuJoCo MJCF hand
 objects = p.loadMJCF("MPL/MPL.xml",flags=0)
@@ -139,10 +143,14 @@ while (1):
   pixelWidth = 320
   pixelHeight = 240
   nearPlane = 0.01
+  nearPlane = p.readUserDebugParameter(near_plane_slider)
   farPlane = 0.05
+  farPlane = p.readUserDebugParameter(far_plane_slider)
   lightDirection = [0,1,0]
   lightColor = [1,1,1]#optional
   fov = 50  #10 or 50
+  fov = p.readUserDebugParameter(fov_slider)
+  aspect = p.readUserDebugParameter(aspect_slider)
 
   key = p.getKeyboardEvents()
   for k in key.keys():
@@ -165,7 +173,12 @@ while (1):
       elif k == 46: #>
         p.resetBasePositionAndOrientation(hand,(hand_po[0][0],hand_po[0][1],hand_po[0][2]-move),hand_po[1])
 
-    print(k)
+    #print("key:",k)
+  mouse = p.getMouseEvents()
+  if len(mouse) > 0:
+    pass
+    #print("mouse len",len(mouse))
+    #print("mouse",mouse)
   if downCameraOn: viewMatrix = down_view()
   else: viewMatrix = ahead_view()
   projectionMatrix = p.computeProjectionMatrixFOV(fov,aspect,nearPlane,farPlane)
@@ -174,21 +187,22 @@ while (1):
   red_dimension = img_arr[:,:,0].flatten()  #TODO change this so any RGB value returns 1, anything else is 0
   #observation = np.absolute(red_dimension-255)%1
   observation = (np.absolute(red_dimension -255) > 0).astype(int)
-  print("data",observation[0:50])
+  #print("data",observation)
   #print(img_arr)
   depthThreashold = p.readUserDebugParameter(depthThreasholdId)
   cYaw = p.readUserDebugParameter(cYawSlider)
   cPitch = p.readUserDebugParameter(cPitchSlider)
   cDistance = p.readUserDebugParameter(cDistanceSlider)
   #p.resetDebugVisualizerCamera( cameraDistance=cDistance, cameraYaw=cYaw, cameraPitch=cPitch, cameraTargetPosition=[0,0,0])
+  #p.resetDebugVisualizerCamera( cameraDistance=cDistance, cameraYaw=cYaw, cameraPitch=cPitch, cameraTargetPosition=[0,0,0])
 
   avgDepth = 0.0
-  for y in range(0,h):
-    for x in range(0,w):
-      avgDepth += depths[x][y]
-  avgDepth /= w*h
-  if avgDepth < depthThreashold:
-    print("Touch")
+  #for y in range(0,h):
+  #  for x in range(0,w):
+  #    avgDepth += depths[x][y]
+  #avgDepth /= w*h
+  #if avgDepth < depthThreashold:
+  #  print("Touch")
 
   p.stepSimulation()
 
