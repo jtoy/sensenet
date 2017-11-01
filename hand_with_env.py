@@ -179,10 +179,22 @@ if args.mode == "train" or args.mode == "all":
       torch.save(model.state_dict(), os.path.join(args.model_path, 'cnn.pkl' ))
 elif args.mode == "test" or args.mode == "all":
   #test
-  for i_episode in range(10):
+  test_labels = []
+  predicted_labels = []
+  steps_to_guess = []
+  correct = 0
+  total = 0
+  for i_episode in range(100):
+    guesses = []
     print("testing on a new object")
     observation = env.reset()
     for t in range(500):
-      action = random.sample(env.action_space(),1)[0]
+      action = select_action(observation,env.action_space_n(),args.epsilon)
       observation, reward, done, info = env.step(action)
-    print("guessing object type","foo")
+      model.rewards.append(reward)
+      #if confidence over 90%, then use it
+      if np.amax(observation) > 0:  #touching!
+        observation = Variable(observation)
+        output = net(observation)
+        prob, output = torch.max(output.data, 1)
+        print("guessing ", output, " with prob ", prob)
