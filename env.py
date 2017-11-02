@@ -136,6 +136,7 @@ class TouchEnv:
         return random.uniform(-1,1)
         #return 0
       else:
+        #return random.uniform(-1,1)
         return 0
     def convertAction(action):
       #converted = (action-30)/10
@@ -214,6 +215,7 @@ class TouchEnv:
     else: viewMatrix = self.ahead_view()
     projectionMatrix = pb.computeProjectionMatrixFOV(fov,aspect,nearPlane,farPlane)
     w,h,img_arr,depths,mask = pb.getCameraImage(200,200, viewMatrix,projectionMatrix, lightDirection,lightColor,renderer=pb.ER_TINY_RENDERER)
+    #w,h,img_arr,depths,mask = pb.getCameraImage(200,200, viewMatrix,projectionMatrix, lightDirection,lightColor,renderer=pb.ER_BULLET_HARDWARE_OPENGL)
     #red_dimension = img_arr[:,:,0]  #TODO change this so any RGB value returns 1, anything else is 0
     red_dimension = img_arr[:,:,0].flatten()  #TODO change this so any RGB value returns 1, anything else is 0
     #observation = red_dimension
@@ -251,7 +253,7 @@ class TouchEnv:
     lightDirection = [0,1,0]
     lightColor = [1,1,1]#optional
     projectionMatrix = pb.computeProjectionMatrixFOV(fov,aspect,nearPlane,farPlane)
-    w,h,img_arr,depths,mask = pb.getCameraImage(200,200, viewMatrix,projectionMatrix, lightDirection,lightColor,renderer=pb.ER_TINY_RENDERER)
+    w,h,img_arr,depths,mask = pb.getCameraImage(200,200, viewMatrix,projectionMatrix, lightDirection,lightColor,renderer=pb.ER_BULLET_HARDWARE_OPENGL)
     red_dimension = img_arr[:,:,0].flatten()  #TODO change this so any RGB value returns 1, anything else is 0
     observation = red_dimension
     return observation

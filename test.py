@@ -93,8 +93,10 @@ while (1):
   axisY = [-handmat[1],-handmat[4],-handmat[7]] # Negative Y axis
   axisZ = [handmat[2],handmat[5],handmat[8]]
 
-  eye_pos    = [link_p[0]+offset*axisY[0],link_p[1]+offset*axisY[1],link_p[2]+offset*axisY[2]]
-  target_pos = [link_p[0]+offset1*axisY[0],link_p[1]+offset1*axisY[1],link_p[2]+offset1*axisY[2]] # target position based by axisY, not X
+  eye_pos    = [link_p[0],link_p[1],link_p[2]]
+  #eye_pos    = [link_p[0]+offset*axisY[0],link_p[1]+offset*axisY[1],link_p[2]+offset*axisY[2]]
+  target_pos = [link_p[0]+offset1,link_p[1],link_p[2]] # target position based by axisY, not X
+  #target_pos = [link_p[0]+offset1*axisY[0],link_p[1]+offset1*axisY[1],link_p[2]+offset1*axisY[2]] # target position based by axisY, not X
   up = axisZ # Up is Z axis
   viewMatrix = p.computeViewMatrix(eye_pos,target_pos,up)
 
@@ -105,13 +107,6 @@ while (1):
   camTargetPos = [0,0,0]
   nearPlane = 0.01
   farPlane = 1000
-  yaw = 40
-  pitch = 10.0
-  roll=0
-  upAxisIndex = 2
-  camDistance = 4
-  pixelWidth = 320
-  pixelHeight = 240
   nearPlane = 0.01
   nearPlane = p.readUserDebugParameter(near_plane_slider)
   farPlane = 0.05

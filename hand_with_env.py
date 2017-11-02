@@ -57,7 +57,6 @@ class CNN(nn.Module):
       
   def forward(self, x):
     x = x.unsqueeze(1).float()
-    #print("size",x.size())
     out = self.layer1(x)
     out = self.layer2(out)
     #print("size before",out.size())
@@ -119,8 +118,11 @@ cnn = CNN(env.classification_n())
 if args.gpu and torch.cuda.is_available():
   model.cuda()
   cnn.cuda()
-#if args.model_path and os.path.exists(args.model_path):
-#  model.load_state_dict(torch.load(args.model_path))
+if args.model_path:
+  if os.path.exists(args.model_path+"/model.pkl"):
+    print("loading pretrained models")
+    model.load_state_dict(torch.load(args.model_path+"/model.pkl"))
+    cnn.load_state_dict(torch.load(args.model_path+"/cnn.pkl"))
 
 criterion = nn.MSELoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
@@ -140,8 +142,10 @@ if args.mode == "train" or args.mode == "all":
       observation, reward, done, info = env.step(action)
       model.rewards.append(reward)
       
+      print("max ",np.amax(observation))
       if np.amax(observation) > 0:  #touching!
         print("touching!")
+        print("batch size", len(batch))
         if len(batch) > args.batch_size:
           #TODO GPU support
           #batch = torch.from_numpy(np.asarray(batch))
@@ -184,17 +188,23 @@ elif args.mode == "test" or args.mode == "all":
   steps_to_guess = []
   correct = 0
   total = 0
+  max_steps = 500
   for i_episode in range(100):
     guesses = []
     print("testing on a new object")
     observation = env.reset()
-    for t in range(500):
+    for t in range(max_steps):
       action = select_action(observation,env.action_space_n(),args.epsilon)
       observation, reward, done, info = env.step(action)
       model.rewards.append(reward)
       #if confidence over 90%, then use it
-      if np.amax(observation) > 0:  #touching!
-        observation = Variable(observation)
-        output = net(observation)
-        prob, output = torch.max(output.data, 1)
-        print("guessing ", output, " with prob ", prob)
+      if (t >= max_steps-1 and len(guesses) == 0) or np.amax(observation) > 0:  #touching!
+        x = [observation.reshape(200,200)]
+        x = torch.LongTensor(torch.from_numpy(np.asarray(x)))
+        x = Variable(x)
+        output = cnn(x)
+        prob, predicted = torch.max(output.data, 1)
+        correct += int(predicted[0][0] == env.class_label)
+        total += 1
+        print("predicted ", predicted[0][0], " with prob ", prob[0][0], " correct answer is: ",env.class_label)
+  print('Accuracy of the network: %d %%' % (100 * correct / total )) 
