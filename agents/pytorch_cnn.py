@@ -1,5 +1,5 @@
-import time,os,math,inspect,re
-import random,argparse
+import time,os,math,inspect,re,sys,random,argparse
+sys.path.append('..')
 from env import TouchEnv
 from torch.autograd import Variable
 import numpy as np
