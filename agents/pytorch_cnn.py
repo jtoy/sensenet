@@ -142,8 +142,8 @@ if args.mode == "train" or args.mode == "all":
       observation, reward, done, info = env.step(action)
       model.rewards.append(reward)
       
-      print("max ",np.amax(observation))
-      if np.amax(observation) > 0:  #touching!
+      #if np.amax(observation) > 0:  #touching!
+      if env.is_touching:
         print("touching!")
         print("batch size", len(batch))
         if len(batch) > args.batch_size:
@@ -198,7 +198,7 @@ elif args.mode == "test" or args.mode == "all":
       observation, reward, done, info = env.step(action)
       model.rewards.append(reward)
       #if confidence over 90%, then use it
-      if (t >= max_steps-1 and len(guesses) == 0) or np.amax(observation) > 0:  #touching!
+      if (t >= max_steps-1 and len(guesses) == 0) or env.is_touching:
         x = [observation.reshape(200,200)]
         x = torch.LongTensor(torch.from_numpy(np.asarray(x)))
         x = Variable(x)

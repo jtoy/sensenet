@@ -219,6 +219,7 @@ class TouchEnv:
     red_dimension = img_arr[:,:,0].flatten()  #TODO change this so any RGB value returns 1, anything else is 0
     #observation = red_dimension
     observation = (np.absolute(red_dimension -255) > 0).astype(int)
+    self.observation = observation
     info = [123123] #TODO use real values
     pb.stepSimulation()
     #reward if moving towards the object or touching the object
@@ -233,6 +234,9 @@ class TouchEnv:
     self.prev_distance = distance
     #print("reward",reward)
     return observation,reward,done,info
+  def is_touching():
+    #this function probably shouldnt be here
+    return (self.observation and np.amax(self.observation) > 0)
 
   def reset(self):
     # load a new object to classify
@@ -256,6 +260,9 @@ class TouchEnv:
     red_dimension = img_arr[:,:,0].flatten()  #TODO change this so any RGB value returns 1, anything else is 0
     observation = red_dimension
     return observation
+  def render():
+    #we always render currently, this is just here for compatibility with openai
+    pass
 
   def disconnect(self):
     pb.disconnect()
