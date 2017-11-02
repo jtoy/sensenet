@@ -208,3 +208,13 @@ elif args.mode == "test" or args.mode == "all":
         total += 1
         print("predicted ", predicted[0][0], " with prob ", prob[0][0], " correct answer is: ",env.class_label)
   print('Accuracy of the network: %d %%' % (100 * correct / total )) 
+else:
+  for i_episode in range(100):
+    observation = env.reset()
+    for t in range(1000):
+      env.render()
+      #print(observation)
+      action = np.random.choice(env.action_space_n())
+      observation,reward,done,info = env.step(action)
+  
+  
