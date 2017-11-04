@@ -1,0 +1,14 @@
+[Unit]
+Description = XFCE Session Start
+After = systemd-user-sessions.service network.target sound.target
+
+[Service]
+User = ubuntu
+Group = ubuntu
+Type = simple
+ExecStart = /usr/bin/startxfce4
+Restart = on-abort
+RestartSec = 5
+
+[Install]
+WantedBy = multi-user.target
