@@ -111,7 +111,7 @@ def finish_episode():
   del model.saved_actions[:]
 
 #train
-env = TouchEnv(args)
+env = TouchEnv(vars(args))
 print("action space: ",env.action_space())
 model = Policy(env.observation_space(),env.action_space_n())
 cnn = CNN(env.classification_n())
@@ -142,10 +142,9 @@ if args.mode == "train" or args.mode == "all":
       observation, reward, done, info = env.step(action)
       model.rewards.append(reward)
       
-      #if np.amax(observation) > 0:  #touching!
-      if env.is_touching:
+      if env.is_touching():
         print("touching!")
-        print("batch size", len(batch))
+        #print("batch size", len(batch))
         if len(batch) > args.batch_size:
           #TODO GPU support
           #batch = torch.from_numpy(np.asarray(batch))
@@ -213,8 +212,8 @@ else:
     observation = env.reset()
     for t in range(1000):
       env.render()
-      #print(observation)
       action = np.random.choice(env.action_space_n())
       observation,reward,done,info = env.step(action)
+      print(observation)
   
   

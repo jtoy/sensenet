@@ -9,7 +9,8 @@ class TouchEnv:
     currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
     parentdir = os.path.dirname(os.path.dirname(currentdir))
     os.sys.path.insert(0,parentdir)
-    if options.render:
+    #TODO check if options is a string, so we know which environment to load
+    if 'render' in self.options and self.options['render'] == True:
       pb.connect(pb.GUI)
     else:
       pb.connect(pb.DIRECT)
@@ -44,7 +45,7 @@ class TouchEnv:
     copyfile(stlfile, "../data/file.stl")
     self.class_label = int(stlfile.split("/")[-3])
     print("class_label: ",self.class_label)
-    self.obj_to_classify = pb.loadURDF("loader.urdf",obj_x,obj_y,obj_z)
+    self.obj_to_classify = pb.loadURDF("loader.urdf",(obj_x,obj_y,obj_z),useFixedBase=1)
 
   def classification_n(self):
     subd = glob.glob("../../touchable_data/objects/*/")
@@ -58,6 +59,7 @@ class TouchEnv:
   def observation_space(self):
     #TODO return Box/Discrete
     return 40000  #200x200
+    #return 10000  #100x100
   def label(self):
     pass
 
@@ -96,7 +98,7 @@ class TouchEnv:
     up = axisZ # Up is Z axis
     viewMatrix = pb.computeViewMatrix(eye_pos,target_pos,up)
 
-    if self.options.render:
+    if 'render' in self.options and self.options['render'] == True:
       #p.addUserDebugLine(link_p,[link_p[0]+0.1*axisY[0],link_p[1]+0.1*axisY[1],link_p[2]+0.1*axisY[2]],[1,0,0],2,0.05) # Debug line in camera direction
       pb.addUserDebugLine(link_p,[link_p[0]+0.1*axisY[0],link_p[1]+0.1*axisY[1],link_p[2]+0.1*axisY[2]],[1,0,0],2,0.2)
 
@@ -117,7 +119,7 @@ class TouchEnv:
     up = axisY # Up is Y axis
     viewMatrix = pb.computeViewMatrix(eye_pos,target_pos,up)
 
-    if self.options.render:
+    if 'render' in self.options and self.options['render'] == True:
       pb.addUserDebugLine(link_p,[link_p[0]-0.1*axisZ[0],link_p[1]-0.1*axisZ[1],link_p[2]-0.1*axisZ[2]],[1,0,0],2,0.05) # Debug line in camera direction
 
     return viewMatrix
@@ -144,8 +146,6 @@ class TouchEnv:
 
     aspect = 1
     camTargetPos = [0,0,0]
-    nearPlane = 0.01
-    farPlane = 1000
     yaw = 40
     pitch = 10.0
     roll=0
@@ -153,33 +153,27 @@ class TouchEnv:
     camDistance = 4
     pixelWidth = 320
     pixelHeight = 240
-    nearPlane = 0.01
-    farPlane = 0.05
+    nearPlane = 0.0001
+    farPlane = 0.022
     lightDirection = [0,1,0]
     lightColor = [1,1,1]#optional
     fov = 50  #10 or 50
 
     hand_po = pb.getBasePositionAndOrientation(self.hand)
-    #ho = pb.getQuaternionFromEuler([0,3.14,0]) #dont really know what this does
-    #hand_cid = pb.createConstraint(self.hand,-1,-1,-1,pb.JOINT_FIXED,[0,0,0],[0.1,0,0],[0.500000,0.300006,0.700000],ho)
+    ho = pb.getQuaternionFromEuler([0,0,0]) #dont really know what this does
+    hand_cid = pb.createConstraint(self.hand,-1,-1,-1,pb.JOINT_FIXED,[0,0,0],(0.1,0,0),hand_po[0],ho,hand_po[1])
     if action == 65298 or action == 0: #down
-      pb.resetBasePositionAndOrientation(self.hand,(hand_po[0][0]+self.move,hand_po[0][1],hand_po[0][2]),hand_po[1])
-      #pb.changeConstraint(hand_cid,(hand_po[0][0]+self.move,hand_po[0][1],hand_po[0][2]),hand_po[1], maxForce=50)
+      pb.changeConstraint(hand_cid,(hand_po[0][0]+self.move,hand_po[0][1],hand_po[0][2]),hand_po[1], maxForce=50)
     elif action == 65297 or action == 1: #up
-      pb.resetBasePositionAndOrientation(self.hand,(hand_po[0][0]-self.move,hand_po[0][1],hand_po[0][2]),hand_po[1])
-      #pb.changeConstraint(hand_cid,(hand_po[0][0]-self.move,hand_po[0][1],hand_po[0][2]),hand_po[1], maxForce=50)
+      pb.changeConstraint(hand_cid,(hand_po[0][0]-self.move,hand_po[0][1],hand_po[0][2]),hand_po[1], maxForce=50)
     elif action == 65295 or action == 2: #left
-      pb.resetBasePositionAndOrientation(self.hand,(hand_po[0][0],hand_po[0][1]+self.move,hand_po[0][2]),hand_po[1])
-      #pb.changeConstraint(hand_cid,(hand_po[0][0],hand_po[0][1]+self.move,hand_po[0][2]),hand_po[1], maxForce=50)
+      pb.changeConstraint(hand_cid,(hand_po[0][0],hand_po[0][1]+self.move,hand_po[0][2]),hand_po[1], maxForce=50)
     elif action== 65296 or action == 3: #right
-      pb.resetBasePositionAndOrientation(self.hand,(hand_po[0][0],hand_po[0][1]-self.move,hand_po[0][2]),hand_po[1])
-      #pb.changeConstraint(hand_cid,(hand_po[0][0],hand_po[0][1]-self.move,hand_po[0][2]),hand_po[1], maxForce=50)
+      pb.changeConstraint(hand_cid,(hand_po[0][0],hand_po[0][1]-self.move,hand_po[0][2]),hand_po[1], maxForce=50)
     elif action == 44 or action == 4: #<
-      pb.resetBasePositionAndOrientation(self.hand,(hand_po[0][0],hand_po[0][1],hand_po[0][2]+self.move),hand_po[1])
-      #pb.changeConstraint(hand_cid,(hand_po[0][0],hand_po[0][1],hand_po[0][2]+self.move),hand_po[1], maxForce=50)
+      pb.changeConstraint(hand_cid,(hand_po[0][0],hand_po[0][1],hand_po[0][2]+self.move),hand_po[1], maxForce=50)
     elif action == 46 or action == 5: #>
-      pb.resetBasePositionAndOrientation(self.hand,(hand_po[0][0],hand_po[0][1],hand_po[0][2]-self.move),hand_po[1])
-      #pb.changeConstraint(hand_cid,(hand_po[0][0],hand_po[0][1],hand_po[0][2]-self.move),hand_po[1], maxForce=50)
+      pb.changeConstraint(hand_cid,(hand_po[0][0],hand_po[0][1],hand_po[0][2]-self.move),hand_po[1], maxForce=50)
     elif action >= 6 and action <= 25:
     #elif action >= 21 and action <= 40:
       pink = convertSensor(self.pinkId)
@@ -213,13 +207,15 @@ class TouchEnv:
     if self.downCameraOn: viewMatrix = down_view()
     else: viewMatrix = self.ahead_view()
     projectionMatrix = pb.computeProjectionMatrixFOV(fov,aspect,nearPlane,farPlane)
-    #w,h,img_arr,depths,mask = pb.getCameraImage(200,200, viewMatrix,projectionMatrix, lightDirection,lightColor,renderer=pb.ER_TINY_RENDERER)
-    w,h,img_arr,depths,mask = pb.getCameraImage(200,200, viewMatrix,projectionMatrix, lightDirection,lightColor,renderer=pb.ER_BULLET_HARDWARE_OPENGL)
+    w,h,img_arr,depths,mask = pb.getCameraImage(200,200, viewMatrix,projectionMatrix, lightDirection,lightColor,renderer=pb.ER_TINY_RENDERER)
+    #w,h,img_arr,depths,mask = pb.getCameraImage(200,200, viewMatrix,projectionMatrix, lightDirection,lightColor,renderer=pb.ER_BULLET_HARDWARE_OPENGL)
     #red_dimension = img_arr[:,:,0]  #TODO change this so any RGB value returns 1, anything else is 0
     red_dimension = img_arr[:,:,0].flatten()  #TODO change this so any RGB value returns 1, anything else is 0
     #observation = red_dimension
     observation = (np.absolute(red_dimension -255) > 0).astype(int)
     self.observation = observation
+    self.img_arr = img_arr
+    self.depths= depths
     info = [123123] #TODO use real values
     pb.stepSimulation()
     #reward if moving towards the object or touching the object
@@ -234,9 +230,15 @@ class TouchEnv:
     self.prev_distance = distance
     #print("reward",reward)
     return observation,reward,done,info
-  def is_touching():
+
+  def is_touching(self):
     #this function probably shouldnt be here
-    return (self.observation and np.amax(self.observation) > 0)
+    #depth_f = self.depths.flatten()
+    #m = np.ma.masked_where(depth_f>=1.0, depth_f) 
+    #red_dimension = self.img_arr[:,:,0].flatten()  #TODO change this so any RGB value returns 1, anything else is 0
+    #o = (np.ma.masked_where(np.ma.getmask(m), np.absolute(red_dimension -255) > 0)).astype(int)
+    #return (np.amax(o) > 0)
+    return (np.amax(self.observation) > 0)
 
   def reset(self):
     # load a new object to classify
@@ -259,10 +261,9 @@ class TouchEnv:
     w,h,img_arr,depths,mask = pb.getCameraImage(200,200, viewMatrix,projectionMatrix, lightDirection,lightColor,renderer=pb.ER_BULLET_HARDWARE_OPENGL)
     red_dimension = img_arr[:,:,0].flatten()  #TODO change this so any RGB value returns 1, anything else is 0
     observation = red_dimension
+    print("sizWTF")
+    print("size",observation.size)
     return observation
-  def render():
-    #we always render currently, this is just here for compatibility with openai
-    pass
 
   def disconnect(self):
     pb.disconnect()
