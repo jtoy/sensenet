@@ -1,6 +1,6 @@
 import time,os,math,inspect,re
 import random
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 import pybullet as p
 import numpy as np
 
@@ -38,8 +38,8 @@ while (1):
   pink = 0
   middle = 0
   index = 0
-  thumb = 0
-  ring = 0
+  thumb = random.uniform(-1,1) 
+  ring = random.uniform(-1,1)
   p.setJointMotorControl2(hand,7,p.POSITION_CONTROL,pi/4.)	
   p.setJointMotorControl2(hand,9,p.POSITION_CONTROL,thumb+pi/10)
   p.setJointMotorControl2(hand,11,p.POSITION_CONTROL,thumb)
@@ -118,6 +118,9 @@ while (1):
   aspect = p.readUserDebugParameter(aspect_slider)
   projectionMatrix = p.computeProjectionMatrixFOV(fov,aspect,nearPlane,farPlane)
   w,h,img_arr,depths,mask = p.getCameraImage(200,200, viewMatrix,projectionMatrix, lightDirection,lightColor,renderer=p.ER_TINY_RENDERER)
+  red_dimension = img_arr[:,:,0].flatten()  #TODO change this so any RGB value returns 1, anything else is 0
+  observation = (np.absolute(red_dimension -255) > 0).astype(int)
+  print(observation)
 
   #p.resetDebugVisualizerCamera( cameraDistance=cDistance, cameraYaw=cYaw, cameraPitch=cPitch, cameraTargetPosition=[0,0,0])
   p.stepSimulation()

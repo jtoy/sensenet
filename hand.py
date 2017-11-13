@@ -38,11 +38,12 @@ thumbId = 3
 ring_id = 4
 def convertSensor(finger_index):
   if finger_index == indexId: 
-    #return random.uniform(-1,1)
-    return 0
+    return random.uniform(-1,1)
+    #return 0
   else:
-    return 0
+    #return 0
     #return random.random()
+    return random.uniform(-1,1)
 
 p.setRealTimeSimulation(0)
 
