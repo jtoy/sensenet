@@ -46,6 +46,7 @@ class TouchEnv:
     self.class_label = int(stlfile.split("/")[-3])
     print("class_label: ",self.class_label)
     self.obj_to_classify = pb.loadURDF("loader.urdf",(obj_x,obj_y,obj_z),useFixedBase=1)
+    pb.changeVisualShape(self.obj_to_classify,-1,rgbaColor=[1,0,0,1])
 
   def classification_n(self):
     subd = glob.glob("../../touchable_data/objects/*/")
@@ -212,6 +213,7 @@ class TouchEnv:
     #red_dimension = img_arr[:,:,0]  #TODO change this so any RGB value returns 1, anything else is 0
     red_dimension = img_arr[:,:,0].flatten()  #TODO change this so any RGB value returns 1, anything else is 0
     #observation = red_dimension
+    self.img_arr = img_arr
     observation = (np.absolute(red_dimension -255) > 0).astype(int)
     self.observation = observation
     self.img_arr = img_arr
@@ -227,6 +229,8 @@ class TouchEnv:
     #print("distance:",distance)
     if distance < self.prev_distance:
       reward += 1
+    elif distance > self.prev_distance:
+      reward -= 10
     self.prev_distance = distance
     #print("reward",reward)
     return observation,reward,done,info
@@ -238,7 +242,12 @@ class TouchEnv:
     #red_dimension = self.img_arr[:,:,0].flatten()  #TODO change this so any RGB value returns 1, anything else is 0
     #o = (np.ma.masked_where(np.ma.getmask(m), np.absolute(red_dimension -255) > 0)).astype(int)
     #return (np.amax(o) > 0)
-    return (np.amax(self.observation) > 0)
+    r = self.img_arr[:,:,0]
+    #print("shape",r.size)
+    g = self.img_arr[:,:,1]
+    b = self.img_arr[:,:,2]
+    return(np.max(g) == 0 and np.max(b) == 0 and np.max(r) > 0)
+    #return (np.amax(self.observation) > 0)
 
   def reset(self):
     # load a new object to classify
@@ -258,7 +267,7 @@ class TouchEnv:
     lightDirection = [0,1,0]
     lightColor = [1,1,1]#optional
     projectionMatrix = pb.computeProjectionMatrixFOV(fov,aspect,nearPlane,farPlane)
-    w,h,img_arr,depths,mask = pb.getCameraImage(200,200, viewMatrix,projectionMatrix, lightDirection,lightColor,renderer=pb.ER_BULLET_HARDWARE_OPENGL)
+    w,h,img_arr,depths,mask = pb.getCameraImage(200,200, viewMatrix,projectionMatrix, lightDirection,lightColor,renderer=pb.ER_TINY_RENDERER)
     red_dimension = img_arr[:,:,0].flatten()  #TODO change this so any RGB value returns 1, anything else is 0
     observation = red_dimension
     print("sizWTF")

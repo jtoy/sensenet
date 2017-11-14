@@ -146,6 +146,8 @@ if args.mode == "train" or args.mode == "all":
       model.rewards.append(reward)
       
       if env.is_touching():
+        #print(observation)
+        #time.sleep(3)
         print("touching!")
         #print("batch size", len(batch))
         if len(batch) > args.batch_size:
