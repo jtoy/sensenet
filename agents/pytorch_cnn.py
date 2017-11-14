@@ -5,7 +5,7 @@ from torch.autograd import Variable
 import numpy as np
 from itertools import count
 from collections import namedtuple
-
+from tensorboardX import SummaryWriter
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -13,6 +13,7 @@ import torch.optim as optim
 import torch.autograd as autograd
 from torch.autograd import Variable
 
+writer = SummaryWriter()
 SavedAction = namedtuple('SavedAction', ['action', 'value'])
 class Policy(nn.Module):
   def __init__(self,observation_space_n,action_space_n):
@@ -73,6 +74,7 @@ parser.add_argument('--batch_size', type=int, default=42, metavar='N', help='bat
 parser.add_argument('--log-interval', type=int, default=10, metavar='N', help='interval between training status logs (default: 10)') 
 parser.add_argument('--render', action='store_true', help='render the environment')
 parser.add_argument('--gpu', action='store_true', help='use GPU')
+parser.add_argument('--log', type=str, help='log experiment to tensorboard')
 parser.add_argument('--model_path', type=str, help='path to store/retrieve model at')
 parser.add_argument('--mode', type=str, default="train", help='train/test/all model')
 args = parser.parse_args()
@@ -130,11 +132,12 @@ optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 classifier_criterion = nn.CrossEntropyLoss()
 classifier_optimizer = torch.optim.Adam(cnn.parameters(), lr=0.001)
 
-running_reward = 10
+running_reward = 0
 batch = []
 labels = []
+total_steps = 0
 if args.mode == "train" or args.mode == "all":
-  for i_episode in count(1):
+  for i_episode in count(1000):
     observation = env.reset()
     print("episode: ", i_episode)
     for t in range(1000):
@@ -162,6 +165,7 @@ if args.mode == "train" or args.mode == "all":
           loss.backward()
           classifier_optimizer.step()
           print ('Loss: %.4f' %(loss.data[0]))
+          writer.add_scalar("loss",loss.data[0],total_steps)
           batch = []
           labels = []
         else:
@@ -170,9 +174,11 @@ if args.mode == "train" or args.mode == "all":
       if done:
         break
     running_reward = running_reward * 0.99 + t * 0.01
+    total_steps +=1
     finish_episode()
 
     if i_episode % args.log_interval == 0:
+      writer.add_scalar("reward",running_reward,total_steps)
       print('Episode {}\tLast length: {:5d}\tAverage length: {:.2f}'.format(i_episode, t, running_reward))
     if running_reward > 5000: #env.spec.reward_threshold:
       print("Solved! Running reward is now {} and the last episode runs to {} time steps!".format(running_reward, t))
