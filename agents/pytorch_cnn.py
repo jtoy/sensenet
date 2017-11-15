@@ -167,7 +167,8 @@ if args.mode == "train" or args.mode == "all":
           loss.backward()
           classifier_optimizer.step()
           print ('Loss: %.4f' %(loss.data[0]))
-          writer.add_scalar("loss",loss.data[0],total_steps)
+          if args.log:
+            writer.add_scalar(args.log + "/loss",loss.data[0],total_steps)
           batch = []
           labels = []
         else:
@@ -180,7 +181,8 @@ if args.mode == "train" or args.mode == "all":
     finish_episode()
 
     if i_episode % args.log_interval == 0:
-      writer.add_scalar("reward",running_reward,total_steps)
+      if args.log:
+        writer.add_scalar(args.log+"/reward",running_reward,total_steps)
       print('Episode {}\tLast length: {:5d}\tAverage length: {:.2f}'.format(i_episode, t, running_reward))
     if running_reward > 5000: #env.spec.reward_threshold:
       print("Solved! Running reward is now {} and the last episode runs to {} time steps!".format(running_reward, t))
