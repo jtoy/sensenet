@@ -166,20 +166,27 @@ class TouchEnv:
     fov = 50  #10 or 50
 
     hand_po = pb.getBasePositionAndOrientation(self.hand)
+    #print("action",action)
     ho = pb.getQuaternionFromEuler([0,0,0]) #dont really know what this does
-    hand_cid = pb.createConstraint(self.hand,-1,-1,-1,pb.JOINT_FIXED,[0,0,0],(0.1,0,0),hand_po[0],ho,hand_po[1])
+    #hand_cid = pb.createConstraint(self.hand,-1,-1,-1,pb.JOINT_FIXED,[0,0,0],(0.1,0,0),hand_po[0],ho,hand_po[1])
     if action == 65298 or action == 0: #down
-      pb.changeConstraint(hand_cid,(hand_po[0][0]+self.move,hand_po[0][1],hand_po[0][2]),hand_po[1], maxForce=50)
+      #pb.changeConstraint(hand_cid,(hand_po[0][0]+self.move,hand_po[0][1],hand_po[0][2]),hand_po[1], maxForce=50)
+      pb.resetBasePositionAndOrientation(self.hand,(hand_po[0][0]+self.move,hand_po[0][1],hand_po[0][2]),hand_po[1])
     elif action == 65297 or action == 1: #up
-      pb.changeConstraint(hand_cid,(hand_po[0][0]-self.move,hand_po[0][1],hand_po[0][2]),hand_po[1], maxForce=50)
+      pb.resetBasePositionAndOrientation(self.hand,(hand_po[0][0]-self.move,hand_po[0][1],hand_po[0][2]),hand_po[1])
+      #pb.changeConstraint(hand_cid,(hand_po[0][0]-self.move,hand_po[0][1],hand_po[0][2]),hand_po[1], maxForce=50)
     elif action == 65295 or action == 2: #left
-      pb.changeConstraint(hand_cid,(hand_po[0][0],hand_po[0][1]+self.move,hand_po[0][2]),hand_po[1], maxForce=50)
+      pb.resetBasePositionAndOrientation(self.hand,(hand_po[0][0],hand_po[0][1]+self.move,hand_po[0][2]),hand_po[1])
+      #pb.changeConstraint(hand_cid,(hand_po[0][0],hand_po[0][1]+self.move,hand_po[0][2]),hand_po[1], maxForce=50)
     elif action== 65296 or action == 3: #right
-      pb.changeConstraint(hand_cid,(hand_po[0][0],hand_po[0][1]-self.move,hand_po[0][2]),hand_po[1], maxForce=50)
+      pb.resetBasePositionAndOrientation(self.hand,(hand_po[0][0],hand_po[0][1]-self.move,hand_po[0][2]),hand_po[1])
+      #pb.changeConstraint(hand_cid,(hand_po[0][0],hand_po[0][1]-self.move,hand_po[0][2]),hand_po[1], maxForce=50)
     elif action == 44 or action == 4: #<
-      pb.changeConstraint(hand_cid,(hand_po[0][0],hand_po[0][1],hand_po[0][2]+self.move),hand_po[1], maxForce=50)
+      pb.resetBasePositionAndOrientation(self.hand,(hand_po[0][0],hand_po[0][1],hand_po[0][2]+self.move),hand_po[1])
+      #pb.changeConstraint(hand_cid,(hand_po[0][0],hand_po[0][1],hand_po[0][2]+self.move),hand_po[1], maxForce=50)
     elif action == 46 or action == 5: #>
-      pb.changeConstraint(hand_cid,(hand_po[0][0],hand_po[0][1],hand_po[0][2]-self.move),hand_po[1], maxForce=50)
+      pb.resetBasePositionAndOrientation(self.hand,(hand_po[0][0],hand_po[0][1],hand_po[0][2]-self.move),hand_po[1])
+      #pb.changeConstraint(hand_cid,(hand_po[0][0],hand_po[0][1],hand_po[0][2]-self.move),hand_po[1], maxForce=50)
     elif action >= 6 and action <= 25:
     #elif action >= 21 and action <= 40:
       pink = convertSensor(self.pinkId)
