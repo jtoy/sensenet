@@ -40,9 +40,14 @@ class TouchEnv:
     obj_y = -1
     obj_z = 0 
     #TODO fix path issues
-    files = glob.glob("../../touchable_data/objects/**/*.stl",recursive=True)
+    if 'path' in  self.options:
+      path = self.options.path
+    else:
+      path = os.path.dirname( inspect.getfile(inspect.currentframe()))
+    print(path+"../../touchable_data")
+    files = glob.glob(path+"/../touchable_data/objects/**/*.stl",recursive=True)
     stlfile = files[random.randrange(0,files.__len__())]
-    copyfile(stlfile, "../data/file.stl")
+    copyfile(stlfile, path+"/data/file.stl")
     self.class_label = int(stlfile.split("/")[-3])
     print("class_label: ",self.class_label)
     self.obj_to_classify = pb.loadURDF("loader.urdf",(obj_x,obj_y,obj_z),useFixedBase=1)
@@ -75,7 +80,7 @@ class TouchEnv:
     # 21-40 convert to -1 to 1 spaces for finger movement
     #return base_hand + [x+21 for x in range(20)]
     base = [x for x in range(26)]
-    #base = [x for x in range(4)]
+    #base = [x for x in range(6)]
     #base = [x for x in range(6,26)]
     return base
 
