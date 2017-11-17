@@ -39,12 +39,10 @@ class TouchEnv:
     obj_x = 0
     obj_y = -1
     obj_z = 0 
-    #TODO fix path issues
     if 'path' in  self.options:
       path = self.options.path
     else:
-      path = os.path.dirname( inspect.getfile(inspect.currentframe()))
-    print(path+"../../touchable_data")
+      path = os.path.dirname(inspect.getfile(inspect.currentframe()))
     files = glob.glob(path+"/../touchable_data/objects/**/*.stl",recursive=True)
     stlfile = files[random.randrange(0,files.__len__())]
     copyfile(stlfile, path+"/data/file.stl")
@@ -80,7 +78,7 @@ class TouchEnv:
     # 21-40 convert to -1 to 1 spaces for finger movement
     #return base_hand + [x+21 for x in range(20)]
     base = [x for x in range(26)]
-    #base = [x for x in range(6)]
+    base = [x for x in range(8)]
     #base = [x for x in range(6,26)]
     return base
 
@@ -187,8 +185,10 @@ class TouchEnv:
     elif action == 46 or action == 5: #>
       pb.resetBasePositionAndOrientation(self.hand,(hand_po[0][0],hand_po[0][1],hand_po[0][2]-self.move),hand_po[1])
       #pb.changeConstraint(hand_cid,(hand_po[0][0],hand_po[0][1],hand_po[0][2]-self.move),hand_po[1], maxForce=50)
-    elif action >= 6 and action <= 25:
-    #elif action >= 21 and action <= 40:
+    elif action >= 6 and action <= 7:
+    #elif action >= 6 and action <= 40:
+      if action == 7:
+        action = 25 #bad kludge redo all this code
       pink = convertSensor(self.pinkId)
       middle = convertSensor(self.middleId)
       index = convertAction(action)
@@ -234,7 +234,12 @@ class TouchEnv:
     pb.stepSimulation()
     #reward if moving towards the object or touching the object
     reward = 0
-    reward += np.clip(np.amax(observation),0,1) #touching
+    if self.is_touching():
+      touch_reward = 10
+      if 'debug' in self.options and self.options['debug'] == True:
+        print("TOUCHING!!!!")
+    else:
+      touch_reward = 0
     obj_po = pb.getBasePositionAndOrientation(self.obj_to_classify)
     distance = math.sqrt(sum([(xi-yi)**2 for xi,yi in zip(obj_po[0],hand_po[0])])) #TODO faster euclidean
     #distance =  np.linalg.norm(obj_po[0],hand_po[0])
@@ -243,8 +248,14 @@ class TouchEnv:
       reward += 1
     elif distance > self.prev_distance:
       reward -= 10
+    reward -= distance
+    reward += touch_reward
     self.prev_distance = distance
-    #print("reward",reward)
+    if 'debug' in self.options and self.options['debug'] == True:
+      print("touch reward ",touch_reward)
+      print("action ",action)
+      print("reward ",reward)
+      print("distance ",distance)
     return observation,reward,done,info
 
   def is_touching(self):
@@ -258,6 +269,9 @@ class TouchEnv:
     #print("shape",r.size)
     g = self.img_arr[:,:,1]
     b = self.img_arr[:,:,2]
+    #print("g max", (np.max(g) == 0))
+    #print("b max", (np.max(b) == 0))
+    #print("r max", (np.max(r) == 0))
     return(np.max(g) == 0 and np.max(b) == 0 and np.max(r) > 0)
     #return (np.amax(self.observation) > 0)
 

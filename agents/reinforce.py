@@ -75,6 +75,7 @@ parser.add_argument('--seed', type=int, default=42, metavar='N', help='random se
 parser.add_argument('--batch_size', type=int, default=42, metavar='N', help='batch size (default: 42)')
 parser.add_argument('--log-interval', type=int, default=10, metavar='N', help='interval between training status logs (default: 10)') 
 parser.add_argument('--render', action='store_true', help='render the environment')
+parser.add_argument('--debug', action='store_true', help='debug')
 parser.add_argument('--gpu', action='store_true', help='use GPU')
 parser.add_argument('--log', type=str, help='log experiment to tensorboard')
 parser.add_argument('--model_path', type=str, help='path to store/retrieve model at')
@@ -198,6 +199,7 @@ if args.mode == "train" or args.mode == "all":
         break
     running_reward = running_reward * 0.99 + t * 0.01
     total_steps +=1
+    print("learning...")
     finish_episode()
 
     if i_episode % args.log_interval == 0:
