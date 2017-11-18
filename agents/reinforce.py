@@ -118,6 +118,10 @@ print("action space: ",env.action_space())
 model = Policy(env.observation_space(),env.action_space_n())
 cnn = CNN(env.classification_n())
 if args.gpu and torch.cuda.is_available():
+  FloatTensor = torch.cuda.FloatTensor if use_cuda else torch.FloatTensor
+  LongTensor = torch.cuda.LongTensor if use_cuda else torch.LongTensor
+  ByteTensor = torch.cuda.ByteTensor if use_cuda else torch.ByteTensor
+  Tensor = FloatTensor
   model.cuda()
   cnn.cuda()
 if args.model_path:
@@ -137,7 +141,7 @@ batch = []
 labels = []
 total_steps = 0
 if args.mode == "train" or args.mode == "all":
-  for i_episode in count(1000):
+  for i_episode in range(0,1000):
     observation = env.reset()
     print("episode: ", i_episode)
     for t in range(1000):
