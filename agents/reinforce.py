@@ -1,6 +1,6 @@
 import time,os,math,inspect,re,sys,random,argparse
 sys.path.append('..')
-from env import TouchEnv
+from env import SenseEnv
 from torch.autograd import Variable
 import numpy as np
 from itertools import count
@@ -68,7 +68,7 @@ class CNN(nn.Module):
     out = self.fc(out)
     return out
 
-parser = argparse.ArgumentParser(description='TouchNet actor-critic example')
+parser = argparse.ArgumentParser(description='SenseNet reinforce example')
 parser.add_argument('--gamma', type=float, default=0.99, metavar='G', help='discount factor (default: 0.99)')
 parser.add_argument('--epsilon', type=float, default=0.6, metavar='G', help='epsilon value for random action (default: 0.6)')
 parser.add_argument('--seed', type=int, default=42, metavar='N', help='random seed (default: 42)')
@@ -83,8 +83,8 @@ parser.add_argument('--mode', type=str, default="train", help='train/test/all mo
 args = parser.parse_args()
 
 
-def select_action(state,n_actions,epsilon=0.6):
-  if 1 == 2 and np.random.rand() < epsilon:
+def select_action(state,n_actions,epsilon=0.2):
+  if np.random.rand() < epsilon:
     return np.random.choice(n_actions)
   else:
     state = torch.from_numpy(state).float().unsqueeze(0)
@@ -111,30 +111,9 @@ def finish_episode():
   del model.rewards[:]
   del model.saved_actions[:]
 
-def xxfinish_episode():
-  R = 0
-  saved_actions = model.saved_actions
-  value_loss = 0
-  rewards = []
-  for r in model.rewards[::-1]:
-    R = r + args.gamma * R
-    rewards.insert(0, R)
-  rewards = torch.Tensor(rewards)
-  rewards = (rewards - rewards.mean()) / (rewards.std() + np.finfo(np.float32).eps)
-  for (action, value), r in zip(saved_actions, rewards):
-    reward = r - value.data[0,0]
-    action.reinforce(reward)
-    value_loss += F.smooth_l1_loss(value, Variable(torch.Tensor([r])))
-  optimizer.zero_grad()
-  final_nodes = [value_loss] + list(map(lambda p: p.action, saved_actions))
-  gradients = [torch.ones(1)] + [None] * len(saved_actions)
-  autograd.backward(final_nodes, gradients)
-  optimizer.step()
-  del model.rewards[:]
-  del model.saved_actions[:]
 
 #train
-env = TouchEnv(vars(args))
+env = SenseEnv(vars(args))
 print("action space: ",env.action_space())
 model = Policy(env.observation_space(),env.action_space_n())
 cnn = CNN(env.classification_n())

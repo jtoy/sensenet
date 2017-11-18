@@ -3,7 +3,7 @@ import time,os,math,inspect,re
 import random,glob,math
 from shutil import copyfile
 import numpy as np
-class TouchEnv:
+class SenseEnv:
   def __init__(self,options={}):
     self.options = options
     currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
@@ -18,7 +18,7 @@ class TouchEnv:
     pb.setRealTimeSimulation(0)
     self.move = 0.01
     self.load_random_object()
-    self.load_hand()
+    self.load_agent()
     self.pi = 3.1415926535
     self.pinkId = 0
     self.middleId = 1
@@ -56,9 +56,9 @@ class TouchEnv:
     return len(subd)
 
 
-  def load_hand(self):
+  def load_agent(self):
     objects = pb.loadMJCF("MPL/MPL.xml",flags=0)
-    self.hand=objects[0]  #1 total
+    self.agent=objects[0]  #1 total
 
   def observation_space(self):
     #TODO return Box/Discrete
@@ -88,7 +88,7 @@ class TouchEnv:
   def render(self):
     pass
   def ahead_view(self):
-    link_state = pb.getLinkState(self.hand,self.indexEndID)
+    link_state = pb.getLinkState(self.agent,self.indexEndID)
     link_p = link_state[0]
     link_o = link_state[1]
     handmat = pb.getMatrixFromQuaternion(link_o)
@@ -163,27 +163,27 @@ class TouchEnv:
     lightColor = [1,1,1]#optional
     fov = 50  #10 or 50
 
-    hand_po = pb.getBasePositionAndOrientation(self.hand)
+    hand_po = pb.getBasePositionAndOrientation(self.agent)
     #print("action",action)
-    ho = pb.getQuaternionFromEuler([0,0,0]) #dont really know what this does
+    ho = pb.getQuaternionFromEuler([0,0,0])
     #hand_cid = pb.createConstraint(self.hand,-1,-1,-1,pb.JOINT_FIXED,[0,0,0],(0.1,0,0),hand_po[0],ho,hand_po[1])
     if action == 65298 or action == 0: #down
       #pb.changeConstraint(hand_cid,(hand_po[0][0]+self.move,hand_po[0][1],hand_po[0][2]),hand_po[1], maxForce=50)
-      pb.resetBasePositionAndOrientation(self.hand,(hand_po[0][0]+self.move,hand_po[0][1],hand_po[0][2]),hand_po[1])
+      pb.resetBasePositionAndOrientation(self.agent,(hand_po[0][0]+self.move,hand_po[0][1],hand_po[0][2]),hand_po[1])
     elif action == 65297 or action == 1: #up
-      pb.resetBasePositionAndOrientation(self.hand,(hand_po[0][0]-self.move,hand_po[0][1],hand_po[0][2]),hand_po[1])
+      pb.resetBasePositionAndOrientation(self.agent,(hand_po[0][0]-self.move,hand_po[0][1],hand_po[0][2]),hand_po[1])
       #pb.changeConstraint(hand_cid,(hand_po[0][0]-self.move,hand_po[0][1],hand_po[0][2]),hand_po[1], maxForce=50)
     elif action == 65295 or action == 2: #left
-      pb.resetBasePositionAndOrientation(self.hand,(hand_po[0][0],hand_po[0][1]+self.move,hand_po[0][2]),hand_po[1])
+      pb.resetBasePositionAndOrientation(self.agent,(hand_po[0][0],hand_po[0][1]+self.move,hand_po[0][2]),hand_po[1])
       #pb.changeConstraint(hand_cid,(hand_po[0][0],hand_po[0][1]+self.move,hand_po[0][2]),hand_po[1], maxForce=50)
     elif action== 65296 or action == 3: #right
-      pb.resetBasePositionAndOrientation(self.hand,(hand_po[0][0],hand_po[0][1]-self.move,hand_po[0][2]),hand_po[1])
+      pb.resetBasePositionAndOrientation(self.agent,(hand_po[0][0],hand_po[0][1]-self.move,hand_po[0][2]),hand_po[1])
       #pb.changeConstraint(hand_cid,(hand_po[0][0],hand_po[0][1]-self.move,hand_po[0][2]),hand_po[1], maxForce=50)
     elif action == 44 or action == 4: #<
-      pb.resetBasePositionAndOrientation(self.hand,(hand_po[0][0],hand_po[0][1],hand_po[0][2]+self.move),hand_po[1])
+      pb.resetBasePositionAndOrientation(self.agent,(hand_po[0][0],hand_po[0][1],hand_po[0][2]+self.move),hand_po[1])
       #pb.changeConstraint(hand_cid,(hand_po[0][0],hand_po[0][1],hand_po[0][2]+self.move),hand_po[1], maxForce=50)
     elif action == 46 or action == 5: #>
-      pb.resetBasePositionAndOrientation(self.hand,(hand_po[0][0],hand_po[0][1],hand_po[0][2]-self.move),hand_po[1])
+      pb.resetBasePositionAndOrientation(self.agent,(hand_po[0][0],hand_po[0][1],hand_po[0][2]-self.move),hand_po[1])
       #pb.changeConstraint(hand_cid,(hand_po[0][0],hand_po[0][1],hand_po[0][2]-self.move),hand_po[1], maxForce=50)
     elif action >= 6 and action <= 7:
     #elif action >= 6 and action <= 40:
@@ -195,28 +195,28 @@ class TouchEnv:
       thumb = convertSensor(self.thumbId)
       ring = convertSensor(self.ring_id)
 
-      pb.setJointMotorControl2(self.hand,7,pb.POSITION_CONTROL,self.pi/4.)	
-      pb.setJointMotorControl2(self.hand,9,pb.POSITION_CONTROL,thumb+self.pi/10)
-      pb.setJointMotorControl2(self.hand,11,pb.POSITION_CONTROL,thumb)
-      pb.setJointMotorControl2(self.hand,13,pb.POSITION_CONTROL,thumb)
+      pb.setJointMotorControl2(self.agent,7,pb.POSITION_CONTROL,self.pi/4.)	
+      pb.setJointMotorControl2(self.agent,9,pb.POSITION_CONTROL,thumb+self.pi/10)
+      pb.setJointMotorControl2(self.agent,11,pb.POSITION_CONTROL,thumb)
+      pb.setJointMotorControl2(self.agent,13,pb.POSITION_CONTROL,thumb)
 
       # That's index finger parts
-      pb.setJointMotorControl2(self.hand,17,pb.POSITION_CONTROL,index)
-      pb.setJointMotorControl2(self.hand,19,pb.POSITION_CONTROL,index)
-      pb.setJointMotorControl2(self.hand,21,pb.POSITION_CONTROL,index)
+      pb.setJointMotorControl2(self.agent,17,pb.POSITION_CONTROL,index)
+      pb.setJointMotorControl2(self.agent,19,pb.POSITION_CONTROL,index)
+      pb.setJointMotorControl2(self.agent,21,pb.POSITION_CONTROL,index)
 
-      pb.setJointMotorControl2(self.hand,24,pb.POSITION_CONTROL,middle)
-      pb.setJointMotorControl2(self.hand,26,pb.POSITION_CONTROL,middle)
-      pb.setJointMotorControl2(self.hand,28,pb.POSITION_CONTROL,middle)
+      pb.setJointMotorControl2(self.agent,24,pb.POSITION_CONTROL,middle)
+      pb.setJointMotorControl2(self.agent,26,pb.POSITION_CONTROL,middle)
+      pb.setJointMotorControl2(self.agent,28,pb.POSITION_CONTROL,middle)
 
-      pb.setJointMotorControl2(self.hand,40,pb.POSITION_CONTROL,pink)
-      pb.setJointMotorControl2(self.hand,42,pb.POSITION_CONTROL,pink)
-      pb.setJointMotorControl2(self.hand,44,pb.POSITION_CONTROL,pink)
+      pb.setJointMotorControl2(self.agent,40,pb.POSITION_CONTROL,pink)
+      pb.setJointMotorControl2(self.agent,42,pb.POSITION_CONTROL,pink)
+      pb.setJointMotorControl2(self.agent,44,pb.POSITION_CONTROL,pink)
 
       ringpos = 0.5*(pink+middle)
-      pb.setJointMotorControl2(self.hand,32,pb.POSITION_CONTROL,ringpos)
-      pb.setJointMotorControl2(self.hand,34,pb.POSITION_CONTROL,ringpos)
-      pb.setJointMotorControl2(self.hand,36,pb.POSITION_CONTROL,ringpos)
+      pb.setJointMotorControl2(self.agent,32,pb.POSITION_CONTROL,ringpos)
+      pb.setJointMotorControl2(self.agent,34,pb.POSITION_CONTROL,ringpos)
+      pb.setJointMotorControl2(self.agent,36,pb.POSITION_CONTROL,ringpos)
     if self.downCameraOn: viewMatrix = down_view()
     else: viewMatrix = self.ahead_view()
     projectionMatrix = pb.computeProjectionMatrixFOV(fov,aspect,nearPlane,farPlane)
@@ -230,7 +230,7 @@ class TouchEnv:
     self.observation = observation
     self.img_arr = img_arr
     self.depths= depths
-    info = [123123] #TODO use real values
+    info = [42] #TODO use real values
     pb.stepSimulation()
     #reward if moving towards the object or touching the object
     reward = 0
@@ -280,9 +280,9 @@ class TouchEnv:
     # move hand to 0,0,0
     pb.resetSimulation()
     self.load_random_object()
-    self.load_hand()
-    hand_po = pb.getBasePositionAndOrientation(self.hand)
-    pb.resetBasePositionAndOrientation(self.hand,(0,0,0),hand_po[1])
+    self.load_agent()
+    hand_po = pb.getBasePositionAndOrientation(self.agent)
+    pb.resetBasePositionAndOrientation(self.agent,(0,0,0),hand_po[1])
     pb.stepSimulation()
     if self.downCameraOn: viewMatrix = down_view()
     else: viewMatrix = self.ahead_view()
@@ -296,8 +296,6 @@ class TouchEnv:
     w,h,img_arr,depths,mask = pb.getCameraImage(200,200, viewMatrix,projectionMatrix, lightDirection,lightColor,renderer=pb.ER_TINY_RENDERER)
     red_dimension = img_arr[:,:,0].flatten()  #TODO change this so any RGB value returns 1, anything else is 0
     observation = red_dimension
-    print("sizWTF")
-    print("size",observation.size)
     return observation
 
   def disconnect(self):

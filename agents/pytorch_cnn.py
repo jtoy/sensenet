@@ -1,6 +1,6 @@
 import time,os,math,inspect,re,sys,random,argparse
 sys.path.append('..')
-from env import TouchEnv
+from env import SenseEnv
 from torch.autograd import Variable
 import numpy as np
 from itertools import count
@@ -66,7 +66,7 @@ class CNN(nn.Module):
     out = self.fc(out)
     return out
 
-parser = argparse.ArgumentParser(description='TouchNet actor-critic example')
+parser = argparse.ArgumentParser(description='SenseNet actor-critic example')
 parser.add_argument('--gamma', type=float, default=0.99, metavar='G', help='discount factor (default: 0.99)')
 parser.add_argument('--epsilon', type=float, default=0.6, metavar='G', help='epsilon value for random action (default: 0.6)')
 parser.add_argument('--seed', type=int, default=42, metavar='N', help='random seed (default: 42)')
@@ -114,7 +114,7 @@ def finish_episode():
   del model.saved_actions[:]
 
 #train
-env = TouchEnv(vars(args))
+env = SenseEnv(vars(args))
 print("action space: ",env.action_space())
 model = Policy(env.observation_space(),env.action_space_n())
 cnn = CNN(env.classification_n())
