@@ -4,8 +4,24 @@ import random,glob,math
 from shutil import copyfile
 import numpy as np
 class SenseEnv:
+  def bootstrap_env(self):
+    pass
+  def get_path(self):
+    if 'path' in  self.options:
+      path = self.options.path
+    else:
+      path = os.path.dirname(inspect.getfile(inspect.currentframe()))
+    return path
+  def make(self):
+    #load an environment
+    #check in our folder, check in local directory
+    pass
+
   def __init__(self,options={}):
     self.options = options
+    self.bootstrap_env()
+    self.steps = 0
+
     currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
     parentdir = os.path.dirname(os.path.dirname(currentdir))
     os.sys.path.insert(0,parentdir)
@@ -39,10 +55,7 @@ class SenseEnv:
     obj_x = 0
     obj_y = -1
     obj_z = 0 
-    if 'path' in  self.options:
-      path = self.options.path
-    else:
-      path = os.path.dirname(inspect.getfile(inspect.currentframe()))
+    path = self.get_path()
     files = glob.glob(path+"/../touchable_data/objects/**/*.stl",recursive=True)
     stlfile = files[random.randrange(0,files.__len__())]
     copyfile(stlfile, path+"/data/file.stl")
@@ -145,7 +158,13 @@ class SenseEnv:
         return 0
     def convertAction(action):
       #converted = (action-30)/10
-      converted = (action-16)/10
+      #converted = (action-16)/10
+      if action == 6:
+        converted = -1 
+      elif action == 25:
+        converted = 1
+      #print("action ",action)
+      #print("converted ",converted)
       return converted
 
     aspect = 1
@@ -227,15 +246,17 @@ class SenseEnv:
     #observation = red_dimension
     self.img_arr = img_arr
     observation = (np.absolute(red_dimension -255) > 0).astype(int)
-    self.observation = observation
+    self.current_observation = observation
     self.img_arr = img_arr
     self.depths= depths
-    info = [42] #TODO use real values
+    info = [42] #answer to life,TODO use real values
     pb.stepSimulation()
+    self.steps +=1
     #reward if moving towards the object or touching the object
     reward = 0
+    max_steps = 1000
     if self.is_touching():
-      touch_reward = 10
+      touch_reward = 10 
       if 'debug' in self.options and self.options['debug'] == True:
         print("TOUCHING!!!!")
     else:
@@ -245,12 +266,13 @@ class SenseEnv:
     #distance =  np.linalg.norm(obj_po[0],hand_po[0])
     #print("distance:",distance)
     if distance < self.prev_distance:
-      reward += 1
+      reward += 1 * (max_steps - self.steps)
     elif distance > self.prev_distance:
       reward -= 10
     reward -= distance
     reward += touch_reward
     self.prev_distance = distance
+    #print("shape",observation.shape)
     if 'debug' in self.options and self.options['debug'] == True:
       print("touch reward ",touch_reward)
       print("action ",action)
@@ -272,10 +294,12 @@ class SenseEnv:
     #print("g max", (np.max(g) == 0))
     #print("b max", (np.max(b) == 0))
     #print("r max", (np.max(r) == 0))
+    #print(np.max(r))
     return(np.max(g) == 0 and np.max(b) == 0 and np.max(r) > 0)
-    #return (np.amax(self.observation) > 0)
+    #print("wtf", np.amax(self.current_observation) > 0)
+    #return (np.amax(self.current_observation) > 0)
 
-  def reset(self):
+  def oldreset(self):
     # load a new object to classify
     # move hand to 0,0,0
     pb.resetSimulation()
@@ -300,5 +324,34 @@ class SenseEnv:
 
   def disconnect(self):
     pb.disconnect()
+  def load_simulation(self):
+    pass
+  def reset(self):
+    # load a new object to classify
+    # move hand to 0,0,0
+    pb.resetSimulation()
+    self.load_simulation()
+    self.load_random_object()
+    self.load_agent()
+    #return observation
+    #return self.current_observation
+    self.img_arr = np.zeros(1080000).reshape(200,200,3,3,3)
+    default = np.zeros((40000))
+    self.steps = 0
+    self.current_observation = default
+    #print("default",default.shape)
+    return  default
+  def rand(self):
+    return np.random.rand()
+  def random_action(self): 
+    return np.random.choice(n_actions)
+
+  def gpu(self):
+    #TODO check if torch available
+    use_cuda = torch.cuda.is_available()
+    FloatTensor = torch.cuda.FloatTensor if use_cuda else torch.FloatTensor
+    LongTensor = torch.cuda.LongTensor if use_cuda else torch.LongTensor
+    ByteTensor = torch.cuda.ByteTensor if use_cuda else torch.ByteTensor
+    Tensor = FloatTensor
 
 

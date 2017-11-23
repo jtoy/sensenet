@@ -12,6 +12,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 import torch.autograd as autograd
 from torch.autograd import Variable
+#tensorboard --logdir runs
 
 writer = SummaryWriter()
 SavedAction = namedtuple('SavedAction', ['action', 'value'])
@@ -118,10 +119,7 @@ print("action space: ",env.action_space())
 model = Policy(env.observation_space(),env.action_space_n())
 cnn = CNN(env.classification_n())
 if args.gpu and torch.cuda.is_available():
-  FloatTensor = torch.cuda.FloatTensor if use_cuda else torch.FloatTensor
-  LongTensor = torch.cuda.LongTensor if use_cuda else torch.LongTensor
-  ByteTensor = torch.cuda.ByteTensor if use_cuda else torch.ByteTensor
-  Tensor = FloatTensor
+  env.gpu()
   model.cuda()
   cnn.cuda()
 if args.model_path:
@@ -201,27 +199,33 @@ elif args.mode == "test" or args.mode == "all":
   predicted_labels = []
   steps_to_guess = []
   correct = 0
+  total_correct = 0
   total = 0
   max_steps = 500
   for i_episode in range(100):
     guesses = []
     print("testing on a new object")
     observation = env.reset()
+    print("episode ",i_episode)
     for t in range(max_steps):
       action = select_action(observation,env.action_space_n(),args.epsilon)
       observation, reward, done, info = env.step(action)
       model.rewards.append(reward)
       #if confidence over 90%, then use it
-      if (t >= max_steps-1 and len(guesses) == 0) or env.is_touching:
+      #if (t >= max_steps-1 and len(guesses) == 0) or env.is_touching:
+      if env.is_touching():
         x = [observation.reshape(200,200)]
         x = torch.LongTensor(torch.from_numpy(np.asarray(x)))
         x = Variable(x)
         output = cnn(x)
         prob, predicted = torch.max(output.data, 1)
-        correct += int(predicted[0][0] == env.class_label)
+        correct = int(predicted[0][0] == env.class_label)
+        total_correct += correct
         total += 1
         print("predicted ", predicted[0][0], " with prob ", prob[0][0], " correct answer is: ",env.class_label)
-  print('Accuracy of the network: %d %%' % (100 * correct / total )) 
+
+        break
+  print('Accuracy of the network: %d %%' % (100 * total_correct / total )) 
 else:
   for i_episode in range(100):
     observation = env.reset()
