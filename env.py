@@ -72,6 +72,11 @@ class SenseEnv:
   def load_agent(self):
     objects = pb.loadMJCF("MPL/MPL.xml",flags=0)
     self.agent=objects[0]  #1 total
+    #if self.obj_to_classify:
+    obj_po = pb.getBasePositionAndOrientation(self.obj_to_classify)
+      #hand_po = pb.getBasePositionAndOrientation(self.agent)
+      #distance = math.sqrt(sum([(xi-yi)**2 for xi,yi in zip(obj_po[0],hand_po[0])])) #TODO faster euclidean
+    pb.resetBasePositionAndOrientation(self.agent,(obj_po[0][0],obj_po[0][1]+0.5,obj_po[0][2]),obj_po[1])
 
   def observation_space(self):
     #TODO return Box/Discrete
