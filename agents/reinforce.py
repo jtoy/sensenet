@@ -141,11 +141,14 @@ total_steps = 0
 if args.mode == "train" or args.mode == "all":
   for i_episode in range(0,1000):
     observation = env.reset()
+    touch_count = 0
+    average_activated_pixels = []
     print("episode: ", i_episode)
-    for t in range(1000):
+    for step in range(1000):
       action = select_action(observation,env.action_space_n(),args.epsilon)
       observation, reward, done, info = env.step(action)
       model.rewards.append(reward)
+      average_activated_pixels.append(np.mean(observation))
       
       if env.is_touching():
         #print(observation)
@@ -178,19 +181,23 @@ if args.mode == "train" or args.mode == "all":
           labels.append(env.class_label)
       if done:
         break
-    running_reward = running_reward * 0.99 + t * 0.01
+    running_reward = running_reward * 0.99 + step * 0.01
     total_steps +=1
     print("learning...")
     finish_episode()
+    touch_count += 1
 
+    if args.log:
+      writer.add_scalar(args.log+"/reward",running_reward,total_steps)
+      writer.add_scalar(args.log+"/touches",touch_count,total_steps)
+      writer.add_scalar(args.log+"/average_activated_pixels",np.mean(average_activated_pixels),total_steps)
     if i_episode % args.log_interval == 0:
-      if args.log:
-        writer.add_scalar(args.log+"/reward",running_reward,total_steps)
-      print('Episode {}\tLast length: {:5d}\tAverage length: {:.2f}'.format(i_episode, t, running_reward))
+      print('Episode {}\tLast length: {:5d}\tAverage length: {:.2f}'.format(i_episode, step, running_reward))
     if running_reward > 5000: #env.spec.reward_threshold:
       print("Solved! Running reward is now {} and the last episode runs to {} time steps!".format(running_reward, t))
       break
     if args.model_path:
+      env.mkdir_p(args.model_path)
       torch.save(model.state_dict(), os.path.join(args.model_path, 'policy.pkl' ))
       torch.save(model.state_dict(), os.path.join(args.model_path, 'cnn.pkl' ))
 elif args.mode == "test" or args.mode == "all":
@@ -207,7 +214,7 @@ elif args.mode == "test" or args.mode == "all":
     print("testing on a new object")
     observation = env.reset()
     print("episode ",i_episode)
-    for t in range(max_steps):
+    for step in range(max_steps):
       action = select_action(observation,env.action_space_n(),args.epsilon)
       observation, reward, done, info = env.step(action)
       model.rewards.append(reward)
@@ -229,7 +236,7 @@ elif args.mode == "test" or args.mode == "all":
 else:
   for i_episode in range(100):
     observation = env.reset()
-    for t in range(1000):
+    for step in range(1000):
       env.render()
       action = np.random.choice(env.action_space_n())
       observation,reward,done,info = env.step(action)

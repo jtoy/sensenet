@@ -1,9 +1,18 @@
 import pybullet as pb
-import time,os,math,inspect,re
+import time,os,math,inspect,re,errno
 import random,glob,math
 from shutil import copyfile
 import numpy as np
+
 class SenseEnv:
+  def mkdir_p(self,path):
+    try:
+      os.makedirs(path)
+    except OSError as exc:  # Python >2.5
+      if exc.errno == errno.EEXIST and os.path.isdir(path):
+        pass
+      else:
+        raise
   def bootstrap_env(self):
     pass
   def get_path(self):
