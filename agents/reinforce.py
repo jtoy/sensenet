@@ -1,17 +1,22 @@
-import time,os,math,inspect,re,sys,random,argparse
+
+import sys
 sys.path.append('..')
+
 from env import SenseEnv
-from torch.autograd import Variable
-import numpy as np
-from itertools import count
-from collections import namedtuple
-from tensorboardX import SummaryWriter
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 import torch.autograd as autograd
 from torch.autograd import Variable
+from tensorboardX import SummaryWriter
+import numpy as np
+
+from itertools import count
+from collections import namedtuple
+import time,os,math,inspect,re,random,argparse
+
 #tensorboard --logdir runs
 
 writer = SummaryWriter()
@@ -35,6 +40,9 @@ class Policy(nn.Module):
     self.value1.weight.data.uniform_(-0.1, 0.1)
 
   def forward(self, x):
+    if args.gpu and torch.cuda.is_available():
+      # TODO: clean way to access "args.gpu" from here.
+      x = x.cuda()
     x = F.relu(self.affine1(x))
     xa = F.relu(self.action1(x))
     xv = F.relu(self.value1(x))

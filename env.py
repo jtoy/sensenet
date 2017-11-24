@@ -1,8 +1,11 @@
+
 import pybullet as pb
+import torch
+import numpy as np
+
 import time,os,math,inspect,re,errno
 import random,glob,math
 from shutil import copyfile
-import numpy as np
 
 class SenseEnv:
   def mkdir_p(self,path):
@@ -228,7 +231,7 @@ class SenseEnv:
       thumb = convertSensor(self.thumbId)
       ring = convertSensor(self.ring_id)
 
-      pb.setJointMotorControl2(self.agent,7,pb.POSITION_CONTROL,self.pi/4.)	
+      pb.setJointMotorControl2(self.agent,7,pb.POSITION_CONTROL,self.pi/4.) 
       pb.setJointMotorControl2(self.agent,9,pb.POSITION_CONTROL,thumb+self.pi/10)
       pb.setJointMotorControl2(self.agent,11,pb.POSITION_CONTROL,thumb)
       pb.setJointMotorControl2(self.agent,13,pb.POSITION_CONTROL,thumb)
@@ -367,5 +370,3 @@ class SenseEnv:
     LongTensor = torch.cuda.LongTensor if use_cuda else torch.LongTensor
     ByteTensor = torch.cuda.ByteTensor if use_cuda else torch.ByteTensor
     Tensor = FloatTensor
-
-
