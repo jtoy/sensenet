@@ -1,6 +1,4 @@
-
 import pybullet as pb
-import torch
 import numpy as np
 
 import time,os,math,inspect,re,errno
@@ -362,11 +360,3 @@ class SenseEnv:
     return np.random.rand()
   def random_action(self): 
     return np.random.choice(n_actions)
-
-  def gpu(self):
-    #TODO check if torch available
-    use_cuda = torch.cuda.is_available()
-    FloatTensor = torch.cuda.FloatTensor if use_cuda else torch.FloatTensor
-    LongTensor = torch.cuda.LongTensor if use_cuda else torch.LongTensor
-    ByteTensor = torch.cuda.ByteTensor if use_cuda else torch.ByteTensor
-    Tensor = FloatTensor
