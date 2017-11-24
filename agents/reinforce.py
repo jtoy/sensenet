@@ -151,6 +151,7 @@ if args.mode == "train" or args.mode == "all":
       average_activated_pixels.append(np.mean(observation))
       
       if env.is_touching():
+        touch_count += 1
         #print(observation)
         #time.sleep(3)
         print("touching!")
@@ -185,7 +186,6 @@ if args.mode == "train" or args.mode == "all":
     total_steps +=1
     print("learning...")
     finish_episode()
-    touch_count += 1
 
     if args.log:
       writer.add_scalar(args.log+"/reward",running_reward,total_steps)
