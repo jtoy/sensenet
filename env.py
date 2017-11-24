@@ -319,29 +319,6 @@ class SenseEnv:
     #print("wtf", np.amax(self.current_observation) > 0)
     #return (np.amax(self.current_observation) > 0)
 
-  def oldreset(self):
-    # load a new object to classify
-    # move hand to 0,0,0
-    pb.resetSimulation()
-    self.load_random_object()
-    self.load_agent()
-    hand_po = pb.getBasePositionAndOrientation(self.agent)
-    pb.resetBasePositionAndOrientation(self.agent,(0,0,0),hand_po[1])
-    pb.stepSimulation()
-    if self.downCameraOn: viewMatrix = down_view()
-    else: viewMatrix = self.ahead_view()
-    fov = 50  #10 or 50
-    aspect = 1
-    nearPlane = 0.01
-    farPlane = 0.05
-    lightDirection = [0,1,0]
-    lightColor = [1,1,1]#optional
-    projectionMatrix = pb.computeProjectionMatrixFOV(fov,aspect,nearPlane,farPlane)
-    w,h,img_arr,depths,mask = pb.getCameraImage(200,200, viewMatrix,projectionMatrix, lightDirection,lightColor,renderer=pb.ER_TINY_RENDERER)
-    red_dimension = img_arr[:,:,0].flatten()  #TODO change this so any RGB value returns 1, anything else is 0
-    observation = red_dimension
-    return observation
-
   def disconnect(self):
     pb.disconnect()
   def load_simulation(self):
