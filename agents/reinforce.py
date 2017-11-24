@@ -88,6 +88,7 @@ parser.add_argument('--debug', action='store_true', help='debug')
 parser.add_argument('--gpu', action='store_true', help='use GPU')
 parser.add_argument('--log', type=str, help='log experiment to tensorboard')
 parser.add_argument('--model_path', type=str, help='path to store/retrieve model at')
+parser.add_argument('--data_path', type=str,default='./objects', help='path to training data')
 parser.add_argument('--mode', type=str, default="train", help='train/test/all model')
 args = parser.parse_args()
 

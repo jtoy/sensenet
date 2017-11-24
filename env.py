@@ -6,7 +6,7 @@ import random,glob,math
 from shutil import copyfile
 
 class SenseEnv:
-  def mkdir_p(self,path):
+  def mkdir_p(self,path): #TODO move this to utils
     try:
       os.makedirs(path)
     except OSError as exc:  # Python >2.5
@@ -16,9 +16,9 @@ class SenseEnv:
         raise
   def bootstrap_env(self):
     pass
-  def get_path(self):
-    if 'path' in  self.options:
-      path = self.options.path
+  def get_data_path(self):
+    if 'data_path' in  self.options:
+      path = self.options['data_path']
     else:
       path = os.path.dirname(inspect.getfile(inspect.currentframe()))
     return path
@@ -29,6 +29,7 @@ class SenseEnv:
 
   def __init__(self,options={}):
     self.options = options
+    #print("options",options)
     self.bootstrap_env()
     self.steps = 0
 
@@ -65,17 +66,21 @@ class SenseEnv:
     obj_x = 0
     obj_y = -1
     obj_z = 0 
-    path = self.get_path()
-    files = glob.glob(path+"/../touchable_data/objects/**/*.stl",recursive=True)
+    path = self.get_data_path()
+    files = glob.glob(path+"/**/*.stl",recursive=True)
+    #files = glob.glob(path+"/../touchable_data/objects/**/*.stl",recursive=True)
     stlfile = files[random.randrange(0,files.__len__())]
-    copyfile(stlfile, path+"/data/file.stl")
+    #TODO copy this file to some tmp area where we can gaurantee writing
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    copyfile(stlfile, dir_path+"/data/file.stl")
     self.class_label = int(stlfile.split("/")[-3])
     print("class_label: ",self.class_label)
     self.obj_to_classify = pb.loadURDF("loader.urdf",(obj_x,obj_y,obj_z),useFixedBase=1)
     pb.changeVisualShape(self.obj_to_classify,-1,rgbaColor=[1,0,0,1])
 
   def classification_n(self):
-    subd = glob.glob("../../touchable_data/objects/*/")
+    subd = glob.glob(self.get_data_path() + "/*/")
+    #subd = glob.glob("../../touchable_data/objects/*/")
     return len(subd)
 
 
