@@ -44,7 +44,7 @@ class SenseEnv:
     pb.setGravity(0,0,0)
     pb.setRealTimeSimulation(0)
     self.move = 0.01
-    self.load_random_object()
+    self.load_object()
     self.load_agent()
     self.pi = 3.1415926535
     self.pinkId = 0
@@ -60,22 +60,29 @@ class SenseEnv:
     self.past_z = 0
     self.prev_distance = 10000000
 
-  def load_random_object(self):
+  def load_object(self):
     #we assume that the directory structure is: SOMEPATH/classname/SHA_NAME/file
     #TODO make path configurable
     obj_x = 0
     obj_y = -1
     obj_z = 0 
-    path = self.get_data_path()
-    files = glob.glob(path+"/**/*.stl",recursive=True)
-    #files = glob.glob(path+"/../touchable_data/objects/**/*.stl",recursive=True)
-    stlfile = files[random.randrange(0,files.__len__())]
+    if 'obj_path' not in self.options:
+      path = self.get_data_path()
+      files = glob.glob(path+"/**/*.stl",recursive=True)
+      stlfile = files[random.randrange(0,files.__len__())]
     #TODO copy this file to some tmp area where we can gaurantee writing
+      self.class_label = int(stlfile.split("/")[-3])
+      print("class_label: ",self.class_label)
+    else:
+      stlfile = self.options['obj_path']
     dir_path = os.path.dirname(os.path.realpath(__file__))
-    copyfile(stlfile, dir_path+"/data/file.stl")
-    self.class_label = int(stlfile.split("/")[-3])
-    print("class_label: ",self.class_label)
-    self.obj_to_classify = pb.loadURDF("loader.urdf",(obj_x,obj_y,obj_z),useFixedBase=1)
+    # we support obj and stl for now
+    if 'stl' in stlfile:
+      obj_type = 'stl'
+    else:
+      obj_type = 'obj'
+    copyfile(stlfile, dir_path+"/data/file."+obj_type)
+    self.obj_to_classify = pb.loadURDF("loader."+obj_type+".urdf",(obj_x,obj_y,obj_z),useFixedBase=1)
     pb.changeVisualShape(self.obj_to_classify,-1,rgbaColor=[1,0,0,1])
 
   def classification_n(self):
@@ -328,7 +335,7 @@ class SenseEnv:
     # move hand to 0,0,0
     pb.resetSimulation()
     self.load_simulation()
-    self.load_random_object()
+    self.load_object()
     self.load_agent()
     #return observation
     #return self.current_observation
