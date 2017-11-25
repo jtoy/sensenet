@@ -13,7 +13,7 @@ We currently support Mac OS X and Linux (ubuntu 14.04). Windows should work, but
 you will need python3 (python2 might work, but has not been tested), numpy, and pybullet
 
 ### Install the fast way:
-pip install sensenet
+pip install sensenet (still working on this)
 
 ## Install from source
 git clone http://github.com/jtoy/sensenet
