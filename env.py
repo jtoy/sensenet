@@ -70,9 +70,9 @@ class SenseEnv:
       path = self.get_data_path()
       files = glob.glob(path+"/**/*.stl",recursive=True)
       stlfile = files[random.randrange(0,files.__len__())]
-    #TODO copy this file to some tmp area where we can gaurantee writing
+    #TODO copy this file to some tmp area where we can guarantee writing
       self.class_label = int(stlfile.split("/")[-3])
-      print("class_label: ",self.class_label)
+      # print("class_label: ",self.class_label)
     else:
       stlfile = self.options['obj_path']
     dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -86,8 +86,8 @@ class SenseEnv:
     pb.changeVisualShape(self.obj_to_classify,-1,rgbaColor=[1,0,0,1])
 
   def classification_n(self):
-    subd = glob.glob(self.get_data_path() + "/*/")
-    #subd = glob.glob("../../touchable_data/objects/*/")
+    path = os.path.join(self.get_data_path(), "objects/*/")
+    subd = glob.glob(path)
     return len(subd)
 
 
