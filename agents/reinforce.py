@@ -29,10 +29,22 @@ parser.add_argument('--gpu', action='store_true', help='use GPU')
 parser.add_argument('--log', type=str, help='log experiment to tensorboard')
 parser.add_argument('--model_path', type=str, help='path to store/retrieve model at')
 parser.add_argument('--data_path', type=str,default='./objects', help='path to training data')
+parser.add_argument('--name', type=str, help='name for logs/model')
 parser.add_argument('--mode', type=str, default="train", help='train/test/all model')
 args = parser.parse_args()
 
-
+if args.name:
+  model_path = "./models/"+args.name
+  log_name = args.name
+else:
+  if args.log:
+    log_name = args.log
+  else:
+    log_name = None
+  if args.model_path:
+    model_path = args.model_path
+  else:
+    model_path = None
 # Command to visualize logs: 
 #   tensorboard --logdir runs
 writer = SummaryWriter()
@@ -170,16 +182,17 @@ def finish_episode_learning(model, optimizer):
 
 env = SenseEnv(vars(args))
 print("action space: ",env.action_space())
+print("class count: ",env.classification_n())
 model = Policy(env.observation_space(),env.action_space_n())
 cnn_lstm = CNNLSTM(env.classification_n())
 if args.gpu and torch.cuda.is_available():
   model.cuda()
   cnn_lstm.cuda()
-if args.model_path:
-  if os.path.exists(args.model_path+"/model.pkl"):
+if model_path:
+  if os.path.exists(model_path+"/model.pkl"):
     print("loading pretrained models")
-    model.load_state_dict(torch.load(args.model_path+"/model.pkl"))
-    cnn_lstm.load_state_dict(torch.load(args.model_path+"/cnn_lstm.pkl"))
+    model.load_state_dict(torch.load(model_path+"/model.pkl"))
+    cnn_lstm.load_state_dict(torch.load(model_path+"/cnn_lstm.pkl"))
 
 criterion = nn.MSELoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
@@ -234,7 +247,7 @@ if args.mode == "train" or args.mode == "all":
       classifier_optimizer.step()
       print ('  Loss: %.4f' %(loss.data[0]))
 
-      if args.log:
+      if log_name:
         writer.add_scalar(args.log + "/loss",loss.data[0],total_steps)
 
     running_reward = running_reward * 0.99 + step * 0.01
@@ -242,7 +255,7 @@ if args.mode == "train" or args.mode == "all":
     print("  learning...")
     finish_episode_learning(model, optimizer)
 
-    if args.log:
+    if log_name:
       writer.add_scalar(args.log+"/reward",running_reward,total_steps)
       writer.add_scalar(args.log+"/touches",len(observed_touches),total_steps)
       writer.add_scalar(args.log+"/average_activated_pixels",np.mean(average_activated_pixels),total_steps)
@@ -251,10 +264,10 @@ if args.mode == "train" or args.mode == "all":
     if running_reward > 5000: #env.spec.reward_threshold:
       print("  Solved! Running reward is now {} and the last episode runs to {} time steps!".format(running_reward, t))
       break
-    if args.model_path:
-      env.mkdir_p(args.model_path)
-      torch.save(model.state_dict(), os.path.join(args.model_path, 'policy.pkl' ))
-      torch.save(model.state_dict(), os.path.join(args.model_path, 'cnn_lstm.pkl' ))
+    if model_path:
+      env.mkdir_p(model_path)
+      torch.save(model.state_dict(), os.path.join(model_path, 'policy.pkl' ))
+      torch.save(model.state_dict(), os.path.join(model_path, 'cnn_lstm.pkl' ))
 
 elif args.mode == "test" or args.mode == "all":
   #test
