@@ -272,7 +272,7 @@ class SenseEnv:
         red_dimension = img_arr[:,:,0].flatten()  #TODO change this so any RGB value returns 1, anything else is 0
         #observation = red_dimension
         self.img_arr = img_arr
-        observation = (np.absolute(red_dimension -255) > 0).astype(np.int8)
+        observation = (np.absolute(red_dimension -255) > 0).astype(int)
         self.current_observation = observation
         self.img_arr = img_arr
         self.depths= depths
