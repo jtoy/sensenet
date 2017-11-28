@@ -177,7 +177,7 @@ class DeepQNetwork:
         plt.xlabel('training steps')
         plt.show()
 
-# straight from the TF example, modified to work with 7 classes istead of 10
+# straight from the TF example, modified to work with 6 classes istead of 10
 def cnn_model_fn(features, labels, mode):
     input_layer = tf.reshape(features["x"], [-1, 200, 200, 1])
     conv1 = tf.layers.conv2d(inputs=input_layer,
@@ -294,7 +294,7 @@ if __name__ == "__main__":
                 ep_r[i_episode] += reward
             
                 if total_steps > 1000:      
-                  cost = RL.learn()
+                    cost = RL.learn()
 
                 if env.is_touching():
                     print('\ntouching at step', env.steps, 'total reward is ', ep_r[i_episode])
