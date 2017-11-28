@@ -276,17 +276,13 @@ if __name__ == "__main__":
         for i_episode in range(num_games):
           
             observation = env.reset()
-            observation.astype(int, copy=False)# save some memory since it defaults to 64bit
-            # overkill for an array of integers
-
+           
             done = False    
             while not done:
 
                 action = RL.choose_action(observation)
                 observation_, reward, done, info = env.step(action)
-            
-                observation_.astype(int, copy=False)
-
+                        
                 # something to consider - should we modify the reward if it's the terminal state and
                 # we haven't touched yet? Massive penalty for finishing the round with no touch
                 RL.store_transition(observation, action, reward, observation_)      
