@@ -31,6 +31,7 @@ parser.add_argument('--model_path', type=str, help='path to store/retrieve model
 parser.add_argument('--data_path', type=str,default='./objects', help='path to training data')
 parser.add_argument('--name', type=str, help='name for logs/model')
 parser.add_argument('--mode', type=str, default="train", help='train/test/all model')
+parser.add_argument('--obj_type', type=str, default="stl", help='obj or stl')
 args = parser.parse_args()
 
 if args.name:
@@ -202,7 +203,7 @@ classifier_optimizer = torch.optim.Adam(cnn_lstm.parameters(), lr=0.001)
 
 running_reward = 10
 total_steps = 0
-max_steps = 100
+max_steps = 500
   
 if args.mode == "train" or args.mode == "all":
 
@@ -248,7 +249,7 @@ if args.mode == "train" or args.mode == "all":
       print ('  Loss: %.4f' %(loss.data[0]))
 
       if log_name:
-        writer.add_scalar(args.log + "/loss",loss.data[0],total_steps)
+        writer.add_scalar(log_name + "/loss",loss.data[0],total_steps)
 
     running_reward = running_reward * 0.99 + step * 0.01
     total_steps +=1
@@ -256,9 +257,9 @@ if args.mode == "train" or args.mode == "all":
     finish_episode_learning(model, optimizer)
 
     if log_name:
-      writer.add_scalar(args.log+"/reward",running_reward,total_steps)
-      writer.add_scalar(args.log+"/touches",len(observed_touches),total_steps)
-      writer.add_scalar(args.log+"/average_activated_pixels",np.mean(average_activated_pixels),total_steps)
+      writer.add_scalar(log_name+"/reward",running_reward,total_steps)
+      writer.add_scalar(log_name+"/touches",len(observed_touches),total_steps)
+      writer.add_scalar(log_name+"/average_activated_pixels",np.mean(average_activated_pixels),total_steps)
     if i_episode % args.log_interval == 0:
       print('  Episode {}\tLast length: {:5d}\tAverage length: {:.2f}'.format(i_episode, step, running_reward))
     if running_reward > 5000: #env.spec.reward_threshold:
@@ -277,6 +278,7 @@ elif args.mode == "test" or args.mode == "all":
   correct = 0
   total_correct = 0
   total = 0
+  touched_episodes = 0
 
   for i_episode in range(100):
     # New object (aka new episode)
@@ -296,6 +298,7 @@ elif args.mode == "test" or args.mode == "all":
 
     if len(observed_touches) != 0:
       observed_touches = torch.LongTensor(torch.from_numpy(np.asarray(observed_touches)))
+      touched_episodes += 1
       if args.gpu and torch.cuda.is_available():
         observed_touches = observed_touches.cuda()
       observed_touches = Variable(observed_touches)
@@ -303,14 +306,16 @@ elif args.mode == "test" or args.mode == "all":
       # Predicting and evaluation
       output = cnn_lstm(observed_touches)
       prob, predicted = torch.max(output.data, 1)
-      correct = int(predicted[0] == env.class_label)
+      print("predicted", predicted[0][0])
+      correct = int(predicted[0][0] == env.class_label)
       total_correct += correct
-      print("  predicted ", predicted[0], " with prob ", prob[0], " correct answer is: ", env.class_label)
+      print("  predicted ", predicted[0][0], " with prob ", prob[0], " correct answer is: ", env.class_label)
     else:
       print("  no touches!")
     total += 1
 
   print('Accuracy of the network: %d %%' % (100 * total_correct / total )) 
+  print('touched ',  touched_episodes, ' times') 
 
 else:
   for i_episode in range(100):
