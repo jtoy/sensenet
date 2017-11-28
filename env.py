@@ -66,9 +66,15 @@ class SenseEnv:
         obj_x = 0
         obj_y = -1
         obj_z = 0 
+        if 'obj_type' in self.options:
+            obj_type = self.options['obj_type']
+        elif 'stl' in stlfile:
+            obj_type = 'stl'
+        else:
+            obj_type = 'obj'
         if 'obj_path' not in self.options:
             path = self.get_data_path()
-            files = glob.glob(path+"/**/*.stl",recursive=True)
+            files = glob.glob(path+"/**/*."+obj_type,recursive=True)
             stlfile = files[random.randrange(0,files.__len__())]
         #TODO copy this file to some tmp area where we can guarantee writing
             self.class_label = int(stlfile.split("/")[-3])
@@ -77,10 +83,6 @@ class SenseEnv:
             stlfile = self.options['obj_path']
         dir_path = os.path.dirname(os.path.realpath(__file__))
         # we support obj and stl for now
-        if 'stl' in stlfile:
-            obj_type = 'stl'
-        else:
-            obj_type = 'obj'
         copyfile(stlfile, dir_path+"/data/file."+obj_type)
         self.obj_to_classify = pb.loadURDF("loader."+obj_type+".urdf",(obj_x,obj_y,obj_z),useFixedBase=1)
         pb.changeVisualShape(self.obj_to_classify,-1,rgbaColor=[1,0,0,1])

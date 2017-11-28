@@ -151,6 +151,11 @@ class CNNLSTM(nn.Module):
     # OUTPUT
     return self.out_linear(rnn_out)  # Linear for good classification output size
 
+def select_training_action(state,n_actions,epsilon):
+  if np.random.rand() < 0.25:
+    return 3 #forward
+  else:
+    return select_action(state,n_actions,epsilon)
 
 def select_action(state,n_actions,epsilon=0.2):
   if np.random.rand() < epsilon:
@@ -213,23 +218,25 @@ if args.mode == "train" or args.mode == "all":
     # New object (aka new episode)
     observation = env.reset()
     average_activated_pixels = []
+    touch_count = 0
     observed_touches = []
     print("episode:", i_episode)
 
     for step in range(max_steps):
       # Move and touch the object in this loop. Record touches only as inputs.
-      action = select_action(observation,env.action_space_n(),args.epsilon)
+      action = select_training_action(observation,env.action_space_n(),args.epsilon)
       observation, reward, done, info = env.step(action)
       model.rewards.append(reward)
       average_activated_pixels.append(np.mean(observation))
       if env.is_touching():
         observed_touches.append(observation.reshape(200,200))
-      if done:
-        break
+        touch_count += 1
+      #if done:
+      #  break
 
     if len(observed_touches) != 0:
       touched_episodes += 1
-      print("touches in episode ", i_episode)
+      print("touch in episode ", i_episode)
     if 1==2 and len(observed_touches) != 0:
       # If touched, train classifier. The touched sequence is sent in a CNN LSTM.
       print("  >> {} touches in current episode <<".format(len(observed_touches)))
@@ -259,6 +266,7 @@ if args.mode == "train" or args.mode == "all":
     running_reward = running_reward * 0.99 + step * 0.01
     total_steps +=1
     print("  learning...")
+    print(touch_count, " touchs in episode ", i_episode)
     finish_episode_learning(model, optimizer)
 
     if log_name:
