@@ -11,6 +11,8 @@ action_plan = [{'moves':20,'action':3}]  #sphere circular area
 
 obj_file = '../tests/data/pyramid.stl'
 action_plan = [{'moves':8,'action':3}]  #pyramid angle
+action_plan = [{'moves':8,'action':3},{'moves':10,'action':4},{'moves':5,'action':3}]  #mid pyramid
+action_plan = [{'moves':5,'action':1},{'moves':10,'action':3},{'moves':15,'action':4},{'moves':10,'action':3}]  #top of pyramid
 
 obj_type = 'stl'
 env = SenseEnv({'render':True,'debug':True,'obj_path':obj_file,'load_obj_type':obj_type})
