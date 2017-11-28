@@ -236,7 +236,7 @@ if args.mode == "train" or args.mode == "all":
 
     if len(observed_touches) != 0:
       touched_episodes += 1
-      print("touch in episode ", i_episode)
+      print("touch at step ", step, " in episode ", i_episode)
     if 1==2 and len(observed_touches) != 0:
       # If touched, train classifier. The touched sequence is sent in a CNN LSTM.
       print("  >> {} touches in current episode <<".format(len(observed_touches)))
