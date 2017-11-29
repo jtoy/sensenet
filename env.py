@@ -77,8 +77,9 @@ class SenseEnv:
             files = glob.glob(path+"/**/*."+obj_type,recursive=True)
             stlfile = files[random.randrange(0,files.__len__())]
         #TODO copy this file to some tmp area where we can guarantee writing
-            self.class_label = int(stlfile.split("/")[-3])
-            # print("class_label: ",self.class_label)
+            self.class_label = int(stlfile.split("/")[-3]split("_")[0])
+            #class labels are folder names,must be integer or N_text 
+            print("class_label: ",self.class_label)
         else:
             stlfile = self.options['obj_path']
         dir_path = os.path.dirname(os.path.realpath(__file__))
