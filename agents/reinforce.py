@@ -212,10 +212,11 @@ running_reward = 10
 total_steps = 0
 max_steps = 500
 touched_episodes = 0
+steps_to_first_touch = []
   
-if args.mode == "train" or args.mode == "all":
+if args.mode == "train":
 
-  for i_episode in range(0,args.num_episodes):
+  for i_episode in range(args.num_episodes):
     # New object (aka new episode)
     observation = env.reset()
     average_activated_pixels = []
@@ -232,12 +233,15 @@ if args.mode == "train" or args.mode == "all":
       if env.is_touching():
         observed_touches.append(observation.reshape(200,200))
         touch_count += 1
+        if touch_count == 1:
+          steps_to_first_touch.append(step)
+        if args.debug:
+          print("touch at step ", step, " in episode ", i_episode)
       #if done:
       #  break
 
     if len(observed_touches) != 0:
       touched_episodes += 1
-      print("touch at step ", step, " in episode ", i_episode)
     if 1==2 and len(observed_touches) != 0:
       # If touched, train classifier. The touched sequence is sent in a CNN LSTM.
       print("  >> {} touches in current episode <<".format(len(observed_touches)))
@@ -283,10 +287,11 @@ if args.mode == "train" or args.mode == "all":
       env.mkdir_p(model_path)
       torch.save(model.state_dict(), os.path.join(model_path, 'policy.pkl' ))
       torch.save(model.state_dict(), os.path.join(model_path, 'cnn_lstm.pkl' ))
-  print("touched ", touched_episodes, " times")
+  print("touched", touched_episodes, "times in", args.num_episodes,"episodes", (touched_episodes/args.num_episodes))
+  if len(steps_to_first_touch) > 0:
+    print("average steps to first touch", np.mean(steps_to_first_touch))
 
-elif args.mode == "test" or args.mode == "all":
-  #test
+elif args.mode == "test":
   test_labels = []
   predicted_labels = []
   steps_to_guess = []
@@ -333,7 +338,7 @@ elif args.mode == "test" or args.mode == "all":
   print('touched ',  touched_episodes, ' times') 
 
 else:
-  for i_episode in range(100):
+  for i_episode in range(args.num_episodes):
     observation = env.reset()
     for step in range(1000):
       env.render()
