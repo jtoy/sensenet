@@ -13,9 +13,10 @@ obj_file = '../tests/data/pyramid.stl'
 action_plan = [{'moves':8,'action':3}]  #pyramid angle
 action_plan = [{'moves':8,'action':3},{'moves':10,'action':4},{'moves':5,'action':3}]  #mid pyramid
 action_plan = [{'moves':5,'action':1},{'moves':10,'action':3},{'moves':15,'action':4},{'moves':10,'action':3}]  #top of pyramid
-
-obj_type = 'stl'
-env = SenseEnv({'render':True,'debug':True,'obj_path':obj_file,'load_obj_type':obj_type})
+if len(sys.argv) == 2:
+  obj_file = sys.argv[1]
+  print("loading",obj_file)
+env = SenseEnv({'render':True,'debug':True,'obj_path':obj_file})
 action_plan_counter  = 0
 action_step = 0
 

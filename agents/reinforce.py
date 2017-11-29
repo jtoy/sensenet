@@ -33,6 +33,7 @@ parser.add_argument('--data_path', type=str,default='./objects', help='path to t
 parser.add_argument('--name', type=str, help='name for logs/model')
 parser.add_argument('--mode', type=str, default="train", help='train/test/all model')
 parser.add_argument('--num_episodes', type=int, default=1000, help='number of episodes')
+parser.add_argument('--max_steps', type=int, default=500, help='number of steps per episode')
 parser.add_argument('--obj_type', type=str, default="stl", help='obj or stl')
 args = parser.parse_args()
 
@@ -210,7 +211,6 @@ classifier_optimizer = torch.optim.Adam(cnn_lstm.parameters(), lr=args.lr)
 
 running_reward = 10
 total_steps = 0
-max_steps = 500
 touched_episodes = 0
 steps_to_first_touch = []
   
@@ -224,7 +224,7 @@ if args.mode == "train":
     observed_touches = []
     print("episode:", i_episode)
 
-    for step in range(max_steps):
+    for step in range(args.max_steps):
       # Move and touch the object in this loop. Record touches only as inputs.
       action = select_training_action(observation,env.action_space_n(),args.epsilon)
       observation, reward, done, info = env.step(action)
@@ -271,7 +271,7 @@ if args.mode == "train":
     running_reward = running_reward * 0.99 + step * 0.01
     total_steps +=1
     print("  learning...")
-    print(touch_count, " touchs in episode ", i_episode)
+    print(touch_count, "touches in episode", i_episode)
     finish_episode_learning(model, optimizer)
 
     if log_name:
@@ -306,7 +306,7 @@ elif args.mode == "test":
     observed_touches = []
     print("episode:", i_episode)
 
-    for step in range(max_steps):
+    for step in range(args.max_steps):
       # Move and touch the object in this loop. Record touches only as inputs.
       action = select_action(observation,env.action_space_n(),args.epsilon)
       observation, reward, done, info = env.step(action)
@@ -341,7 +341,6 @@ else:
   for i_episode in range(args.num_episodes):
     observation = env.reset()
     for step in range(1000):
-      env.render()
       action = np.random.choice(env.action_space_n())
       observation,reward,done,info = env.step(action)
       print(observation)
