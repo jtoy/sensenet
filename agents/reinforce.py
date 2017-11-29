@@ -22,6 +22,7 @@ parser = argparse.ArgumentParser(description='SenseNet reinforce example')
 parser.add_argument('--gamma', type=float, default=0.99, metavar='G', help='discount factor (default: 0.99)')
 parser.add_argument('--epsilon', type=float, default=0.6, metavar='G', help='epsilon value for random action (default: 0.6)')
 parser.add_argument('--seed', type=int, default=42, metavar='N', help='random seed (default: 42)')
+parser.add_argument('--lr', type=float, default=0.001, metavar='G', help='learning rate')
 parser.add_argument('--log-interval', type=int, default=10, metavar='N', help='interval between training status logs (default: 10)') 
 parser.add_argument('--render', action='store_true', help='render the environment')
 parser.add_argument('--debug', action='store_true', help='debug')
@@ -202,10 +203,10 @@ if model_path:
     cnn_lstm.load_state_dict(torch.load(model_path+"/cnn_lstm.pkl"))
 
 criterion = nn.MSELoss()
-optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
 
 classifier_criterion = nn.CrossEntropyLoss()
-classifier_optimizer = torch.optim.Adam(cnn_lstm.parameters(), lr=0.001)
+classifier_optimizer = torch.optim.Adam(cnn_lstm.parameters(), lr=args.lr)
 
 running_reward = 10
 total_steps = 0
