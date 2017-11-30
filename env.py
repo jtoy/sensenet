@@ -77,13 +77,12 @@ class SenseEnv:
             files = glob.glob(path+"/**/*."+obj_type,recursive=True)
             stlfile = files[random.randrange(0,files.__len__())]
         #TODO copy this file to some tmp area where we can guarantee writing
-            self.class_label = int(stlfile.split("/")[-3]split("_")[0])
+            self.class_label = int(stlfile.split("/")[-3].split("_")[0])
             #class labels are folder names,must be integer or N_text 
             print("class_label: ",self.class_label)
         else:
             stlfile = self.options['obj_path']
         dir_path = os.path.dirname(os.path.realpath(__file__))
-        print("dir",dir_path)
         copyfile(stlfile, dir_path+"/data/file."+obj_type)
         self.obj_to_classify = pb.loadURDF("loader."+obj_type+".urdf",(obj_x,obj_y,obj_z),useFixedBase=1)
         pb.changeVisualShape(self.obj_to_classify,-1,rgbaColor=[1,0,0,1])
