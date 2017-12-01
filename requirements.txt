@@ -1,3 +1,7 @@
 pybullet
 numpy
 matplotlib
+
+# Testing
+pytest
+tox

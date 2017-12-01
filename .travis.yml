@@ -14,6 +14,6 @@ before_install:
   - sudo mv docker-compose /usr/local/bin
   - docker-compose -v
   - docker -v
-install: "" # so travis doesn't do pip install requirements.txt
 script:
+  - cd tests && pytest
 
