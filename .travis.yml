@@ -1,0 +1,12 @@
+sudo: required
+language: python
+services:
+  - docker
+before_install:
+  # Prime the cache. We currently manually keep this synced.
+  # build command fails due to apt issue "The following packages have unmet dependencies:"
+install: "" # so travis doesn't do pip install requirements.txt
+script:
+  # In a pull request, there are no secrets, and hence no MuJoCo:
+  # https://docs.travis-ci.com/user/pull-requests#Security-Restrictions-when-testing-Pull-Requests.
+
