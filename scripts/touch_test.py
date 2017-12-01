@@ -4,15 +4,15 @@ from env import SenseEnv
 import pybullet as pb
 obj_file = '../tests/data/cube.stl'
 action_plan = [{'moves':14,'action':3}] #full frontal of cube
-#action_plan = [{'moves':14,'action':3},{'moves':11,'action':4}] #top edge,vertical line
+action_plan = [{'moves':14,'action':3},{'moves':11,'action':4}] #top edge,vertical line
 
 obj_file = '../tests/data/sphere.stl'
 action_plan = [{'moves':20,'action':3}]  #sphere circular area
 
-obj_file = '../tests/data/pyramid.stl'
-action_plan = [{'moves':8,'action':3}]  #pyramid angle
-action_plan = [{'moves':8,'action':3},{'moves':10,'action':4},{'moves':5,'action':3}]  #mid pyramid
-action_plan = [{'moves':5,'action':1},{'moves':10,'action':3},{'moves':15,'action':4},{'moves':10,'action':3}]  #top of pyramid
+#obj_file = '../tests/data/pyramid.stl'
+#action_plan = [{'moves':8,'action':3}]  #pyramid angle
+#action_plan = [{'moves':8,'action':3},{'moves':10,'action':4},{'moves':5,'action':3}]  #mid pyramid
+#action_plan = [{'moves':5,'action':1},{'moves':10,'action':3},{'moves':15,'action':4},{'moves':10,'action':3}]  #top of pyramid
 if len(sys.argv) == 2:
   obj_file = sys.argv[1]
   print("loading",obj_file)
