@@ -5,6 +5,11 @@ import time,os,math,inspect,re,errno
 import random,glob,math
 from shutil import copyfile
 
+
+class SenseEnvError(Exception):
+    pass
+
+
 class SenseEnv:
     def mkdir_p(self,path): #TODO move this to utils
         try:
@@ -75,7 +80,11 @@ class SenseEnv:
         if 'obj_path' not in self.options:
             path = self.get_data_path()
             files = glob.glob(path+"/**/*."+obj_type,recursive=True)
-            stlfile = files[random.randrange(0,files.__len__())]
+            try:
+                stlfile = files[random.randrange(0,files.__len__())]
+            except ValueError:
+                raise SenseEnvError("No %s objects found in %s folder!"
+                                    % (obj_type, path))
         #TODO copy this file to some tmp area where we can guarantee writing
             self.class_label = int(stlfile.split("/")[-3].split("_")[0])
             #class labels are folder names,must be integer or N_text 
