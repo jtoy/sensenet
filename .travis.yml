@@ -14,6 +14,9 @@ before_install:
   - sudo mv docker-compose /usr/local/bin
   - docker-compose -v
   - docker -v
+install:
+  - pip install -r requirements.txt
+  - pip install -r tests/requirements_test.txt
 script:
   - cd tests && pytest
 
