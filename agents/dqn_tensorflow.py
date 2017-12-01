@@ -226,7 +226,7 @@ def cnn_model_fn(features, labels, mode):
 
 if __name__ == "__main__":
   
-    parser = argparse.ArgumentParser(description='TouchNet actor-critic example')
+    parser = argparse.ArgumentParser(description='SenseNet actor-critic example')
     parser.add_argument('--gamma', type=float, default=0.99, metavar='G', help='discount factor (default: 0.99)')
     parser.add_argument('--epsilon', type=float, default=0.6, metavar='G', help='epsilon value for random action (default: 0.6)')
     parser.add_argument('--seed', type=int, default=42, metavar='N', help='random seed (default: 42)')
