@@ -25,7 +25,8 @@ class SenseEnv:
         if 'data_path' in  self.options:
             path = self.options['data_path']
         else:
-            path = os.path.dirname(inspect.getfile(inspect.currentframe()))
+            #path = os.path.dirname(inspect.getfile(inspect.currentframe()))
+            path = None
         return path
     def make(self):
         #load an environment
@@ -68,6 +69,7 @@ class SenseEnv:
     def load_object(self):
         #we assume that the directory structure is: SOMEPATH/classname/SHA_NAME/file
         #TODO make path configurable
+        #TODO refactor this whole mess later
         obj_x = 0
         obj_y = -1
         obj_z = 0 
@@ -79,16 +81,20 @@ class SenseEnv:
             obj_type = 'stl'
         if 'obj_path' not in self.options:
             path = self.get_data_path()
-            files = glob.glob(path+"/**/*."+obj_type,recursive=True)
-            try:
-                stlfile = files[random.randrange(0,files.__len__())]
-            except ValueError:
-                raise SenseEnvError("No %s objects found in %s folder!"
+            if path == None:
+                dir_path = os.path.dirname(os.path.realpath(__file__))
+                stlfile = dir_path +"/data/key.stl"
+            else:
+                files = glob.glob(path+"/**/*."+obj_type,recursive=True)
+                try:
+                    stlfile = files[random.randrange(0,files.__len__())]
+                except ValueError:
+                    raise SenseEnvError("No %s objects found in %s folder!"
                                     % (obj_type, path))
-        #TODO copy this file to some tmp area where we can guarantee writing
-            self.class_label = int(stlfile.split("/")[-3].split("_")[0])
-            #class labels are folder names,must be integer or N_text 
-            print("class_label: ",self.class_label)
+                #TODO copy this file to some tmp area where we can guarantee writing
+                self.class_label = int(stlfile.split("/")[-3].split("_")[0])
+                #class labels are folder names,must be integer or N_text 
+                #print("class_label: ",self.class_label)
         else:
             stlfile = self.options['obj_path']
         dir_path = os.path.dirname(os.path.realpath(__file__))
