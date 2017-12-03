@@ -5,8 +5,6 @@ logger = logging.getLogger(__name__)
 
 root_logger = logging.getLogger()
 
-# Should be "gym", but we'll support people doing somewhat crazy
-# things.
 package_name = '.'.join(__name__.split('.')[:-1])
 sensenet_logger = logging.getLogger(package_name)
 
