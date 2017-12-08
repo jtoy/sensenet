@@ -3,7 +3,7 @@ sys.path.append('..')
 from env import SenseEnv
 import pybullet as pb
 
-env = SenseEnv({'render':True,'debug':True})
+env = SenseEnv({'render':True,'debug':False, 'data_path': '../touchable_data/objects/'})
 while (1):
   key = pb.getKeyboardEvents()
   n = -1
@@ -29,5 +29,6 @@ while (1):
       else:
         print("key: ",k)
   if n > -1:
+
    observation,reward,done,info = env.step(n)
 
