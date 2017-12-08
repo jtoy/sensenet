@@ -41,11 +41,11 @@ sensenet_main_dir/sensenet_data/objects/2
 
 ![dataset](images/dataset.png?raw=true "dataset")
 
-#the numbers in objects represent the class number for the objects
 
 
-##Testing
-we use pytest to run tests, ro tun the tests just type "pytest" from the root directory
+## Testing
+
+we use pytest to run tests, ro tun the tests just type "cd tests && pytest" from the root directory
 
 ## running benchmarks
  

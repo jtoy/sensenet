@@ -1,46 +1,26 @@
 import pybullet as pb
 import numpy as np
-import os
+
 import time,os,math,inspect,re,errno
 import random,glob,math
 from shutil import copyfile
+import sensenet
+from sensenet.error import Error
+from sensenet.utils import mkdir_p
 
+class HandEnv(sensenet.SenseEnv):
 
-class SenseEnvError(Exception):
-    pass
-
-
-class SenseEnv:
-    def mkdir_p(self,path): #TODO move this to utils
-        try:
-            os.makedirs(path)
-        except OSError as exc:  # Python >2.5
-            if exc.errno == errno.EEXIST and os.path.isdir(path):
-                pass
-            else:
-                raise
-    def bootstrap_env(self):
-        pass
     def get_data_path(self):
         if 'data_path' in  self.options:
             path = self.options['data_path']
         else:
-<<<<<<< HEAD
-            path = os.path.dirname(inspect.getfile(inspect.currentframe()))
-=======
             #path = os.path.dirname(inspect.getfile(inspect.currentframe()))
             path = None
->>>>>>> 7daf270976f47f28dbff20a25a952bb8e5eedb36
         return path
-    def make(self):
-        #load an environment
-        #check in our folder, check in local directory
-        pass
 
     def __init__(self,options={}):
         self.options = options
         #print("options",options)
-        self.bootstrap_env()
         self.steps = 0
 
         currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
@@ -53,11 +33,7 @@ class SenseEnv:
             pb.connect(pb.DIRECT)
         pb.setGravity(0,0,0)
         pb.setRealTimeSimulation(0)
-<<<<<<< HEAD
-        self.move = 0.1
-=======
         self.move = 0.01
->>>>>>> 7daf270976f47f28dbff20a25a952bb8e5eedb36
         self.load_object()
         self.load_agent()
         self.pi = 3.1415926535
@@ -69,48 +45,15 @@ class SenseEnv:
         self.indexEndID = 21 # Need get position and orientation from index finger parts
         self.offset = 0.02 # Offset from basic position
         self.downCameraOn = False
-        self.past_x = 0
-        self.past_y = 0
-        self.past_z = 0
         self.prev_distance = 10000000
-<<<<<<< HEAD
-        # need to do this at the begining so we can modify the constraint later       
-        self.hand_cid = pb.createConstraint(self.agent,-1,-1,-1,pb.JOINT_FIXED,[0,0,0],[0,0,0],[0,0,0])
-=======
->>>>>>> 7daf270976f47f28dbff20a25a952bb8e5eedb36
 
     def load_object(self):
         #we assume that the directory structure is: SOMEPATH/classname/SHA_NAME/file
         #TODO make path configurable
-<<<<<<< HEAD
-        obj_x = 0
-        obj_y = -1
-        obj_z = 0 
-        if 'obj_path' not in self.options:
-            path = self.get_data_path()
-            files = glob.glob(path+"/**/*.stl",recursive=True)
-            stlfile = files[random.randrange(0,files.__len__())]
-            print(stlfile)
-        #TODO copy this file to some tmp area where we can guarantee writing        
-            # for Windows
-            if os.name == 'nt':
-                self.class_label = int(stlfile.split("\\")[-3])
-            # for OSX and Linux
-            elif os.name == 'posix' or os.name == 'mac':
-                self.class_label = int(stlfile.split("/")[-3])
-        else:
-            stlfile = self.options['obj_path']
-        dir_path = os.path.dirname(os.path.realpath(__file__))
-        # we support obj and stl for now
-        if 'stl' in stlfile:
-            obj_type = 'stl'
-        else:
-            obj_type = 'obj'
-=======
         #TODO refactor this whole mess later
         obj_x = 0
         obj_y = -1
-        obj_z = 0 
+        obj_z = 0
         if 'obj_type' in self.options:
             obj_type = self.options['obj_type']
         elif 'obj_path' in self.options and 'obj' in self.options['obj_path']:
@@ -127,24 +70,26 @@ class SenseEnv:
                 try:
                     stlfile = files[random.randrange(0,files.__len__())]
                 except ValueError:
-                    raise SenseEnvError("No %s objects found in %s folder!"
+                    raise Error("No %s objects found in %s folder!"
                                     % (obj_type, path))
                 #TODO copy this file to some tmp area where we can guarantee writing
                 self.class_label = int(stlfile.split("/")[-3].split("_")[0])
-                #class labels are folder names,must be integer or N_text 
+                #class labels are folder names,must be integer or N_text
                 #print("class_label: ",self.class_label)
         else:
             stlfile = self.options['obj_path']
         dir_path = os.path.dirname(os.path.realpath(__file__))
->>>>>>> 7daf270976f47f28dbff20a25a952bb8e5eedb36
         copyfile(stlfile, dir_path+"/data/file."+obj_type)
         self.obj_to_classify = pb.loadURDF("loader."+obj_type+".urdf",(obj_x,obj_y,obj_z),useFixedBase=1)
         pb.changeVisualShape(self.obj_to_classify,-1,rgbaColor=[1,0,0,1])
 
     def classification_n(self):
-        path = os.path.join(self.get_data_path(), "objects/*/")
-        subd = glob.glob(path)
-        return len(subd)
+        if self.get_data_path() == None:
+            return None
+        else:
+            path = os.path.join(self.get_data_path(), "objects/*/")
+            subd = glob.glob(path)
+            return len(subd)
 
 
     def load_agent(self):
@@ -169,7 +114,7 @@ class SenseEnv:
         #hand forward,back
         #0 nothing
         # 1 2 x + -
-        # 3 4 y + - 
+        # 3 4 y + -
         # 5 6 z + -
         # 21-40 convert to -1 to 1 spaces for finger movement
         #return base_hand + [x+21 for x in range(20)]
@@ -181,8 +126,7 @@ class SenseEnv:
     def action_space_n(self):
         return len(self.action_space())
 
-    def render(self):
-        pass
+
     def ahead_view(self):
         link_state = pb.getLinkState(self.agent,self.indexEndID)
         link_p = link_state[0]
@@ -223,21 +167,17 @@ class SenseEnv:
             pb.addUserDebugLine(link_p,[link_p[0]-0.1*axisZ[0],link_p[1]-0.1*axisZ[1],link_p[2]-0.1*axisZ[2]],[1,0,0],2,0.05) # Debug line in camera direction
 
         return viewMatrix
-<<<<<<< HEAD
-            
-=======
 
 
             #return random.random()
->>>>>>> 7daf270976f47f28dbff20a25a952bb8e5eedb36
-    def step(self,action):
+    def _step(self,action):
         done = False
         #reward (float): amount of reward achieved by the previous action. The scale varies between environments, but the goal is always to increase your total reward.
         #done (boolean): whether it's time to reset the environment again. Most (but not all) tasks are divided up into well-defined episodes, and done being True indicates the episode has terminated. (For example, perhaps the pole tipped too far, or you lost your last life.)
         #observation (object): an environment-specific object representing your observation of the environment. For example, pixel data from a camera, joint angles and joint velocities of a robot, or the board state in a board game.
         #info (dict): diagnostic information useful for debugging. It can sometimes be useful for learning (for example, it might contain the raw probabilities behind the environment's last state change). However, official evaluations of your agent are not allowed to use this for learning.
         def convertSensor(finger_index):
-            if finger_index == self.indexId: 
+            if finger_index == self.indexId:
                 return random.uniform(-1,1)
                 #return 0
             else:
@@ -247,7 +187,7 @@ class SenseEnv:
             #converted = (action-30)/10
             #converted = (action-16)/10
             if action == 6:
-                converted = -1 
+                converted = -1
             elif action == 25:
                 converted = 1
             #print("action ",action)
@@ -270,51 +210,6 @@ class SenseEnv:
         fov = 50  #10 or 50
 
         hand_po = pb.getBasePositionAndOrientation(self.agent)
-<<<<<<< HEAD
-        ho = pb.getQuaternionFromEuler([0.0, 0.0, 0.0])
-        
-        # So when trying to modify the physics of the engine, we run into some problems. If we leave
-        # angular damping at default (0.04) then the hand rotates when moving up and dow, due to torque.
-        # If we set angularDamping to 100.0 then the hand will bounce off into the background due to 
-        # all the stored energy, when it makes contact with the object. The below set of parameters seem
-        # to have a reasonably consistent performance in keeping the hand level and not inducing unwanted
-        # behavior during contact. 
-        pb.changeDynamics(self.agent, linkIndex=-1, spinningFriction=100.0, angularDamping=35.0,
-                contactStiffness=0.0, contactDamping=100)
-       
-        if action == 65298 or action == 0: #down
-            pb.changeConstraint(self.hand_cid,(hand_po[0][0]+self.move,hand_po[0][1],hand_po[0][2]),ho, maxForce=50)
-        elif action == 65297 or action == 1: #up            
-            pb.changeConstraint(self.hand_cid,(hand_po[0][0]-self.move,hand_po[0][1],hand_po[0][2]),ho, maxForce=50)
-        elif action == 65295 or action == 2: #left            
-            pb.changeConstraint(self.hand_cid,(hand_po[0][0],hand_po[0][1]+self.move,hand_po[0][2]),ho, maxForce=50)
-        elif action== 65296 or action == 3: #right            
-            pb.changeConstraint(self.hand_cid,(hand_po[0][0],hand_po[0][1]-self.move,hand_po[0][2]),ho, maxForce=50)
-        elif action == 44 or action == 4: #<        
-            pb.changeConstraint(self.hand_cid,(hand_po[0][0],hand_po[0][1],hand_po[0][2]+self.move), ho, maxForce=50)            
-        elif action == 46 or action == 5: #>            
-            pb.changeConstraint(self.hand_cid,(hand_po[0][0],hand_po[0][1],hand_po[0][2]-self.move), ho, maxForce=50)
-        elif action >= 6 and action <= 7:
-            # keeps the hand from moving towards origin
-            pb.changeConstraint(self.hand_cid,(hand_po[0][0],hand_po[0][1],hand_po[0][2]),ho, maxForce=50)
-            if action == 7:
-                action = 25 #bad kludge redo all this code
-            """
-            self.pinkId = 0
-            self.middleId = 1
-            self.indexId = 2
-            self.thumbId = 3
-            self.ring_id = 4
-            
-            pink = convertSensor(self.pinkId) #pinkId != indexId -> return random uniform
-            middle = convertSensor(self.middleId) # middleId != indexId -> return random uniform
-            
-            thumb = convertSensor(self.thumbId) # thumbId != indexId -> return random uniform
-            ring = convertSensor(self.ring_id) # ring_id != indexId -> return random uniform
-            """
-            index = convertAction(action) # action = 6 or 25 due to kludge -> return -1 or 1                        
-            """
-=======
         #print("action",action)
         ho = pb.getQuaternionFromEuler([0,0,0])
         #hand_cid = pb.createConstraint(self.hand,-1,-1,-1,pb.JOINT_FIXED,[0,0,0],(0.1,0,0),hand_po[0],ho,hand_po[1])
@@ -346,35 +241,16 @@ class SenseEnv:
             thumb = convertSensor(self.thumbId)
             ring = convertSensor(self.ring_id)
 
->>>>>>> 7daf270976f47f28dbff20a25a952bb8e5eedb36
-            pb.setJointMotorControl2(self.agent,7,pb.POSITION_CONTROL,self.pi/4.) 
+            pb.setJointMotorControl2(self.agent,7,pb.POSITION_CONTROL,self.pi/4.)
             pb.setJointMotorControl2(self.agent,9,pb.POSITION_CONTROL,thumb+self.pi/10)
             pb.setJointMotorControl2(self.agent,11,pb.POSITION_CONTROL,thumb)
             pb.setJointMotorControl2(self.agent,13,pb.POSITION_CONTROL,thumb)
-<<<<<<< HEAD
-            """
-            # Getting positions of the index joints to use for moving to a relative position
-            joint17Pos = pb.getJointState(self.agent, 17)[0]
-            joint19Pos = pb.getJointState(self.agent, 19)[0]
-            joint21Pos = pb.getJointState(self.agent, 21)[0]
-            # need to keep the multiplier relatively small otherwise the joint will continue to move
-            # when you take other actions
-            pb.setJointMotorControl2(self.agent,17,pb.POSITION_CONTROL,joint17Pos+index*0.1)
-            pb.setJointMotorControl2(self.agent,19,pb.POSITION_CONTROL,joint19Pos+index*0.1)
-            pb.setJointMotorControl2(self.agent,21,pb.POSITION_CONTROL,joint21Pos+index*0.1)
-            """
-            pb.setJointMotorControl2(self.agent,17,pb.POSITION_CONTROL,index)
-            pb.setJointMotorControl2(self.agent,19,pb.POSITION_CONTROL,index)
-            pb.setJointMotorControl2(self.agent,21,pb.POSITION_CONTROL,index)
-            
-=======
 
             # That's index finger parts
             pb.setJointMotorControl2(self.agent,17,pb.POSITION_CONTROL,index)
             pb.setJointMotorControl2(self.agent,19,pb.POSITION_CONTROL,index)
             pb.setJointMotorControl2(self.agent,21,pb.POSITION_CONTROL,index)
 
->>>>>>> 7daf270976f47f28dbff20a25a952bb8e5eedb36
             pb.setJointMotorControl2(self.agent,24,pb.POSITION_CONTROL,middle)
             pb.setJointMotorControl2(self.agent,26,pb.POSITION_CONTROL,middle)
             pb.setJointMotorControl2(self.agent,28,pb.POSITION_CONTROL,middle)
@@ -387,10 +263,6 @@ class SenseEnv:
             pb.setJointMotorControl2(self.agent,32,pb.POSITION_CONTROL,ringpos)
             pb.setJointMotorControl2(self.agent,34,pb.POSITION_CONTROL,ringpos)
             pb.setJointMotorControl2(self.agent,36,pb.POSITION_CONTROL,ringpos)
-<<<<<<< HEAD
-            """
-=======
->>>>>>> 7daf270976f47f28dbff20a25a952bb8e5eedb36
         if self.downCameraOn: viewMatrix = down_view()
         else: viewMatrix = self.ahead_view()
         projectionMatrix = pb.computeProjectionMatrixFOV(fov,aspect,nearPlane,farPlane)
@@ -400,11 +272,7 @@ class SenseEnv:
         red_dimension = img_arr[:,:,0].flatten()  #TODO change this so any RGB value returns 1, anything else is 0
         #observation = red_dimension
         self.img_arr = img_arr
-<<<<<<< HEAD
-        observation = (np.absolute(red_dimension -255) > 0).astype(np.int8)
-=======
         observation = (np.absolute(red_dimension -255) > 0).astype(int)
->>>>>>> 7daf270976f47f28dbff20a25a952bb8e5eedb36
         self.current_observation = observation
         self.img_arr = img_arr
         self.depths= depths
@@ -415,7 +283,7 @@ class SenseEnv:
         reward = 0
         max_steps = 1000
         if self.is_touching():
-            touch_reward = 10 
+            touch_reward = 10
             if 'debug' in self.options and self.options['debug'] == True:
                 print("TOUCHING!!!!")
         else:
@@ -444,7 +312,7 @@ class SenseEnv:
     def is_touching(self):
         #this function probably shouldnt be here
         #depth_f = self.depths.flatten()
-        #m = np.ma.masked_where(depth_f>=1.0, depth_f) 
+        #m = np.ma.masked_where(depth_f>=1.0, depth_f)
         #red_dimension = self.img_arr[:,:,0].flatten()  #TODO change this so any RGB value returns 1, anything else is 0
         #o = (np.ma.masked_where(np.ma.getmask(m), np.absolute(red_dimension -255) > 0)).astype(int)
         #return (np.amax(o) > 0)
@@ -464,7 +332,7 @@ class SenseEnv:
         pb.disconnect()
     def load_simulation(self):
         pass
-    def reset(self):
+    def _reset(self):
         # load a new object to classify
         # move hand to 0,0,0
         pb.resetSimulation()
@@ -478,12 +346,4 @@ class SenseEnv:
         self.steps = 0
         self.current_observation = default
         #print("default",default.shape)
-        return  default
-    def rand(self):
-        return np.random.rand()
-    def random_action(self): 
-<<<<<<< HEAD
-        return np.random.choice(n_actions)
-=======
-        return np.random.choice(n_actions)
->>>>>>> 7daf270976f47f28dbff20a25a952bb8e5eedb36
+        return default

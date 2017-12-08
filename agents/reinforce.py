@@ -22,6 +22,7 @@ parser = argparse.ArgumentParser(description='SenseNet reinforce example')
 parser.add_argument('--gamma', type=float, default=0.99, metavar='G', help='discount factor (default: 0.99)')
 parser.add_argument('--epsilon', type=float, default=0.6, metavar='G', help='epsilon value for random action (default: 0.6)')
 parser.add_argument('--seed', type=int, default=42, metavar='N', help='random seed (default: 42)')
+parser.add_argument('--lr', type=float, default=0.001, metavar='G', help='learning rate')
 parser.add_argument('--log-interval', type=int, default=10, metavar='N', help='interval between training status logs (default: 10)') 
 parser.add_argument('--render', action='store_true', help='render the environment')
 parser.add_argument('--debug', action='store_true', help='debug')
@@ -31,6 +32,8 @@ parser.add_argument('--model_path', type=str, help='path to store/retrieve model
 parser.add_argument('--data_path', type=str,default='./objects', help='path to training data')
 parser.add_argument('--name', type=str, help='name for logs/model')
 parser.add_argument('--mode', type=str, default="train", help='train/test/all model')
+parser.add_argument('--num_episodes', type=int, default=1000, help='number of episodes')
+parser.add_argument('--max_steps', type=int, default=500, help='number of steps per episode')
 parser.add_argument('--obj_type', type=str, default="stl", help='obj or stl')
 args = parser.parse_args()
 
@@ -150,6 +153,11 @@ class CNNLSTM(nn.Module):
     # OUTPUT
     return self.out_linear(rnn_out)  # Linear for good classification output size
 
+def select_training_action(state,n_actions,epsilon):
+  if np.random.rand() < 0.25:
+    return 3 #forward
+  else:
+    return select_action(state,n_actions,epsilon)
 
 def select_action(state,n_actions,epsilon=0.2):
   if np.random.rand() < epsilon:
@@ -196,36 +204,45 @@ if model_path:
     cnn_lstm.load_state_dict(torch.load(model_path+"/cnn_lstm.pkl"))
 
 criterion = nn.MSELoss()
-optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
 
 classifier_criterion = nn.CrossEntropyLoss()
-classifier_optimizer = torch.optim.Adam(cnn_lstm.parameters(), lr=0.001)
+classifier_optimizer = torch.optim.Adam(cnn_lstm.parameters(), lr=args.lr)
 
 running_reward = 10
 total_steps = 0
-max_steps = 500
+touched_episodes = 0
+steps_to_first_touch = []
   
-if args.mode == "train" or args.mode == "all":
+if args.mode == "train":
 
-  for i_episode in range(0,1000):
+  for i_episode in range(args.num_episodes):
     # New object (aka new episode)
     observation = env.reset()
     average_activated_pixels = []
+    touch_count = 0
     observed_touches = []
     print("episode:", i_episode)
 
-    for step in range(max_steps):
+    for step in range(args.max_steps):
       # Move and touch the object in this loop. Record touches only as inputs.
-      action = select_action(observation,env.action_space_n(),args.epsilon)
+      action = select_training_action(observation,env.action_space_n(),args.epsilon)
       observation, reward, done, info = env.step(action)
       model.rewards.append(reward)
       average_activated_pixels.append(np.mean(observation))
       if env.is_touching():
         observed_touches.append(observation.reshape(200,200))
-      if done:
-        break
+        touch_count += 1
+        if touch_count == 1:
+          steps_to_first_touch.append(step)
+        if args.debug:
+          print("touch at step ", step, " in episode ", i_episode)
+      #if done:
+      #  break
 
     if len(observed_touches) != 0:
+      touched_episodes += 1
+    if 1==2 and len(observed_touches) != 0:
       # If touched, train classifier. The touched sequence is sent in a CNN LSTM.
       print("  >> {} touches in current episode <<".format(len(observed_touches)))
 
@@ -254,6 +271,7 @@ if args.mode == "train" or args.mode == "all":
     running_reward = running_reward * 0.99 + step * 0.01
     total_steps +=1
     print("  learning...")
+    print(touch_count, "touches in episode", i_episode)
     finish_episode_learning(model, optimizer)
 
     if log_name:
@@ -269,9 +287,11 @@ if args.mode == "train" or args.mode == "all":
       env.mkdir_p(model_path)
       torch.save(model.state_dict(), os.path.join(model_path, 'policy.pkl' ))
       torch.save(model.state_dict(), os.path.join(model_path, 'cnn_lstm.pkl' ))
+  print("touched", touched_episodes, "times in", args.num_episodes,"episodes", (touched_episodes/args.num_episodes))
+  if len(steps_to_first_touch) > 0:
+    print("average steps to first touch", np.mean(steps_to_first_touch))
 
-elif args.mode == "test" or args.mode == "all":
-  #test
+elif args.mode == "test":
   test_labels = []
   predicted_labels = []
   steps_to_guess = []
@@ -286,7 +306,7 @@ elif args.mode == "test" or args.mode == "all":
     observed_touches = []
     print("episode:", i_episode)
 
-    for step in range(max_steps):
+    for step in range(args.max_steps):
       # Move and touch the object in this loop. Record touches only as inputs.
       action = select_action(observation,env.action_space_n(),args.epsilon)
       observation, reward, done, info = env.step(action)
@@ -318,10 +338,9 @@ elif args.mode == "test" or args.mode == "all":
   print('touched ',  touched_episodes, ' times') 
 
 else:
-  for i_episode in range(100):
+  for i_episode in range(args.num_episodes):
     observation = env.reset()
     for step in range(1000):
-      env.render()
       action = np.random.choice(env.action_space_n())
       observation,reward,done,info = env.step(action)
       print(observation)
