@@ -7,7 +7,9 @@ import pybullet as pb
 
 import sensenet
 from sensenet.envs.handroid.hand_env import HandEnv
-env = HandEnv({'render':True,'debug':True})
+env = HandEnv({'render':True})
+#from sensenet.envs.handroid.index_finger_hand_env import IndexFingerHandEnv
+#env = IndexFingerHandEnv({'render':True})
 
 while (1):
   key = pb.getKeyboardEvents()
