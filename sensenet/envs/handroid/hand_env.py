@@ -8,6 +8,8 @@ from sensenet.error import Error
 from sensenet.utils import mkdir_p
 
 class HandEnv(sensenet.SenseEnv):
+    def getKeyboardEvents(self):
+        return pb.getKeyboardEvents()
 
     def get_data_path(self):
         if 'data_path' in  self.options:
@@ -45,7 +47,6 @@ class HandEnv(sensenet.SenseEnv):
         self.offset = 0.02 # Offset from basic position
         self.downCameraOn = False
         self.prev_distance = 10000000
-        self.hand_cid = pb.createConstraint(self.agent,-1,-1,-1,pb.JOINT_FIXED,[0,0,0],[0,0,0],[0,0,0])
     def load_object(self):
         #we assume that the directory structure is: SOMEPATH/classname/SHA_NAME/file
         #TODO make path configurable
@@ -82,7 +83,8 @@ class HandEnv(sensenet.SenseEnv):
             stlfile = self.options['obj_path']
         dir_path = os.path.dirname(os.path.realpath(__file__))
         copyfile(stlfile, dir_path+"/data/file."+obj_type)
-        self.obj_to_classify = pb.loadURDF("loader."+obj_type+".urdf",(obj_x,obj_y,obj_z),useFixedBase=1)
+        urdf_path = dir_path+"/data/loader."+obj_type+".urdf"
+        self.obj_to_classify = pb.loadURDF(urdf_path,(obj_x,obj_y,obj_z),useFixedBase=1)
         pb.changeVisualShape(self.obj_to_classify,-1,rgbaColor=[1,0,0,1])
 
     def classification_n(self):
@@ -95,13 +97,16 @@ class HandEnv(sensenet.SenseEnv):
 
 
     def load_agent(self):
-        objects = pb.loadMJCF("MPL/MPL.xml",flags=0)
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        agent_path = dir_path + "/data/MPL/MPL.xml"
+        objects = pb.loadMJCF(agent_path,flags=0)
         self.agent=objects[0]  #1 total
         #if self.obj_to_classify:
         obj_po = pb.getBasePositionAndOrientation(self.obj_to_classify)
+        self.hand_cid = pb.createConstraint(self.agent,-1,-1,-1,pb.JOINT_FIXED,[0,0,0],[0,0,0],[0,0,0])
             #hand_po = pb.getBasePositionAndOrientation(self.agent)
             #distance = math.sqrt(sum([(xi-yi)**2 for xi,yi in zip(obj_po[0],hand_po[0])])) #TODO faster euclidean
-        pb.resetBasePositionAndOrientation(self.agent,(obj_po[0][0],obj_po[0][1]+0.5,obj_po[0][2]),obj_po[1])
+        #pb.resetBasePositionAndOrientation(self.agent,(obj_po[0][0],obj_po[0][1]+0.5,obj_po[0][2]),obj_po[1])
 
     def observation_space(self):
         #TODO return Box/Discrete
@@ -372,20 +377,15 @@ class HandEnv(sensenet.SenseEnv):
 
     def disconnect(self):
         pb.disconnect()
-    def load_simulation(self):
-        pass
     def _reset(self):
         # load a new object to classify
         # move hand to 0,0,0
         pb.resetSimulation()
-        self.load_simulation()
         self.load_object()
         self.load_agent()
         #return observation
-        #return self.current_observation
         self.img_arr = np.zeros(1080000).reshape(200,200,3,3,3)
         default = np.zeros((40000))
         self.steps = 0
         self.current_observation = default
-        #print("default",default.shape)
         return default

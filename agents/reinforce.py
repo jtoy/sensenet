@@ -1,8 +1,9 @@
-
 import sys
 sys.path.append('..')
 
-from env import SenseEnv
+#from env import SenseEnv
+import sensenet
+from sensenet.envs.handroid.hand_env import HandEnv
 
 import torch
 import torch.nn as nn
@@ -34,7 +35,7 @@ parser.add_argument('--name', type=str, help='name for logs/model')
 parser.add_argument('--mode', type=str, default="train", help='train/test/all model')
 parser.add_argument('--num_episodes', type=int, default=1000, help='number of episodes')
 parser.add_argument('--max_steps', type=int, default=500, help='number of steps per episode')
-parser.add_argument('--obj_type', type=str, default="stl", help='obj or stl')
+parser.add_argument('--obj_type', type=str, default="obj", help='obj or stl')
 args = parser.parse_args()
 
 if args.name:
@@ -189,8 +190,9 @@ def finish_episode_learning(model, optimizer):
 
 # Training:
 
-env = SenseEnv(vars(args))
-print("action space: ",env.action_space())
+#env = SenseEnv(vars(args))
+env = HandEnv(vars(args))
+print("action space: ",env.action_space(),env.action_space_n())
 print("class count: ",env.classification_n())
 model = Policy(env.observation_space(),env.action_space_n())
 cnn_lstm = CNNLSTM(env.classification_n())
@@ -231,6 +233,8 @@ if args.mode == "train":
       model.rewards.append(reward)
       average_activated_pixels.append(np.mean(observation))
       if env.is_touching():
+        if args.debug:
+          print("touching")
         observed_touches.append(observation.reshape(200,200))
         touch_count += 1
         if touch_count == 1:
