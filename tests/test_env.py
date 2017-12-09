@@ -1,7 +1,8 @@
 import sys
 sys.path.append('..')
 import gym
-from env import SenseEnv
+import sensenet
+from sensenet.envs.handroid.hand_env import HandEnv
 def test_environments():
     tenv = SenseEnv()
     env = gym.make("CartPole-v0")
