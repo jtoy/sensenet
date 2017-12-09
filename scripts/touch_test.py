@@ -1,7 +1,10 @@
 import sys
-sys.path.append('..')
-from env import SenseEnv
-import pybullet as pb
+#sys.path.append('..')
+#from env import SenseEnv
+
+import sensenet
+from sensenet.envs.handroid.hand_env import HandEnv
+
 obj_file = '../tests/data/cube.stl'
 action_plan = [{'moves':14,'action':3}] #full frontal of cube
 action_plan = [{'moves':14,'action':3},{'moves':11,'action':4}] #top edge,vertical line
@@ -16,7 +19,8 @@ action_plan = [{'moves':20,'action':3}]  #sphere circular area
 if len(sys.argv) == 2:
   obj_file = sys.argv[1]
   print("loading",obj_file)
-env = SenseEnv({'render':True,'debug':True,'obj_path':obj_file})
+#env = SenseEnv({'render':True,'debug':True,'obj_path':obj_file})
+env = HandEnv({'render':True,'obj_path':obj_file})
 action_plan_counter  = 0
 action_step = 0
 
@@ -41,7 +45,7 @@ while (1):
   if action_plan_counter < max_action_plan_steps(action_plan):
     n,action_plan_counter,action_step = process_action_plan(action_plan,action_plan_counter,action_step)
   else:
-    key = pb.getKeyboardEvents()
+    key = env.getKeyboardEvents()
     if len(key.keys()) >= 2:
       m = 0
       if 65307 in key.keys(): #shift

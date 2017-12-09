@@ -7,3 +7,9 @@ register(
     max_episode_steps=1000,
     reward_threshold=5000.0,
     )
+register(
+    id='IndexFingerHandEnv-v0',
+    entry_point='sensenet.envs.handroid:IndexFingerHandEnv',
+    max_episode_steps=1000,
+    reward_threshold=5000.0,
+    )

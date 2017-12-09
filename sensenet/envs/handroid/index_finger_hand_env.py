@@ -7,17 +7,7 @@ import sensenet
 from sensenet.error import Error
 from sensenet.utils import mkdir_p
 
-class HandEnv(sensenet.SenseEnv):
-    def getKeyboardEvents(self):
-        return pb.getKeyboardEvents()
-
-    def get_data_path(self):
-        if 'data_path' in  self.options:
-            path = self.options['data_path']
-        else:
-            #path = os.path.dirname(inspect.getfile(inspect.currentframe()))
-            path = None
-        return path
+class IndexFingerHandEnv(sensenet.HandEnv):
 
     def __init__(self,options={}):
         self.options = options
@@ -47,134 +37,16 @@ class HandEnv(sensenet.SenseEnv):
         self.offset = 0.02 # Offset from basic position
         self.downCameraOn = False
         self.prev_distance = 10000000
-    def load_object(self):
-        #we assume that the directory structure is: SOMEPATH/classname/SHA_NAME/file
-        #TODO make path configurable
-        #TODO refactor this whole mess later
-        obj_x = 0
-        obj_y = -1
-        obj_z = 0
-        if 'obj_type' in self.options:
-            obj_type = self.options['obj_type']
-        elif 'obj_path' in self.options and 'obj' in self.options['obj_path']:
-            obj_type = 'obj'
-        else: #TODO change default to obj after more performance testing
-            obj_type = 'stl'
-        if 'obj_path' not in self.options:
-            path = self.get_data_path()
-            if path == None:
-                dir_path = os.path.dirname(os.path.realpath(__file__))                
-                stlfile = dir_path + "/data/pyramid.stl"                
-            else:
-                files = glob.glob(path+"/**/*."+obj_type,recursive=True)
-                try:
-                    stlfile = files[random.randrange(0,files.__len__())]
-                except ValueError:
-                    raise Error("No %s objects found in %s folder!"
-                                    % (obj_type, path))
-                #TODO copy this file to some tmp area where we can guarantee writing
-                if os.name == 'nt':
-                    self.class_label = int(stlfile.split("\\")[-3].split("_")[0])    
-                elif os.name == 'posix' or os.name == 'mac':
-                    self.class_label = int(stlfile.split("/")[-3].split("_")[0])
-                #class labels are folder names,must be integer or N_text
-                #print("class_label: ",self.class_label)
-        else:
-            stlfile = self.options['obj_path']
-        dir_path = os.path.dirname(os.path.realpath(__file__))
-        copyfile(stlfile, dir_path+"/data/file."+obj_type)
-        urdf_path = dir_path+"/data/loader."+obj_type+".urdf"
-        self.obj_to_classify = pb.loadURDF(urdf_path,(obj_x,obj_y,obj_z),useFixedBase=1)
-        pb.changeVisualShape(self.obj_to_classify,-1,rgbaColor=[1,0,0,1])
-
-    def classification_n(self):
-        if self.get_data_path() == None:
-            return None
-        else:
-            path = os.path.join(self.get_data_path(), "objects/*/")
-            subd = glob.glob(path)
-            return len(subd)
-
+        self.hand_cid = pb.createConstraint(self.agent,-1,-1,-1,pb.JOINT_FIXED,[0,0,0],[0,0,0],[0,0,0])
 
     def load_agent(self):
-        dir_path = os.path.dirname(os.path.realpath(__file__))
-        agent_path = dir_path + "/data/MPL/MPL.xml"
-        objects = pb.loadMJCF(agent_path,flags=0)
+        objects = pb.loadMJCF("MPL/MPL.xml",flags=0)
         self.agent=objects[0]  #1 total
         #if self.obj_to_classify:
         obj_po = pb.getBasePositionAndOrientation(self.obj_to_classify)
-        self.hand_cid = pb.createConstraint(self.agent,-1,-1,-1,pb.JOINT_FIXED,[0,0,0],[0,0,0],[0,0,0])
             #hand_po = pb.getBasePositionAndOrientation(self.agent)
             #distance = math.sqrt(sum([(xi-yi)**2 for xi,yi in zip(obj_po[0],hand_po[0])])) #TODO faster euclidean
-        #pb.resetBasePositionAndOrientation(self.agent,(obj_po[0][0],obj_po[0][1]+0.5,obj_po[0][2]),obj_po[1])
-
-    def observation_space(self):
-        #TODO return Box/Discrete
-        return 40000  #200x200
-        #return 10000  #100x100
-    def label(self):
-        pass
-
-    def action_space(self):
-        #yaw pitch role finger
-        #yaw pitch role hand
-        #hand forward,back
-        #0 nothing
-        # 1 2 x + -
-        # 3 4 y + -
-        # 5 6 z + -
-        # 21-40 convert to -1 to 1 spaces for finger movement
-        #return base_hand + [x+21 for x in range(20)]
-        base = [x for x in range(26)]
-        base = [x for x in range(8)]
-        #base = [x for x in range(6,26)]
-        return base
-
-    def action_space_n(self):
-        return len(self.action_space())
-
-
-    def ahead_view(self):
-        link_state = pb.getLinkState(self.agent,self.indexEndID)
-        link_p = link_state[0]
-        link_o = link_state[1]
-        handmat = pb.getMatrixFromQuaternion(link_o)
-
-        axisX = [handmat[0],handmat[3],handmat[6]]
-        axisY = [-handmat[1],-handmat[4],-handmat[7]] # Negative Y axis
-        axisZ = [handmat[2],handmat[5],handmat[8]]
-
-        eye_pos    = [link_p[0]+self.offset*axisY[0],link_p[1]+self.offset*axisY[1],link_p[2]+self.offset*axisY[2]]
-        target_pos = [link_p[0]+axisY[0],link_p[1]+axisY[1],link_p[2]+axisY[2]] # target position based by axisY, not X
-        up = axisZ # Up is Z axis
-        viewMatrix = pb.computeViewMatrix(eye_pos,target_pos,up)
-
-        if 'render' in self.options and self.options['render'] == True:
-            #p.addUserDebugLine(link_p,[link_p[0]+0.1*axisY[0],link_p[1]+0.1*axisY[1],link_p[2]+0.1*axisY[2]],[1,0,0],2,0.05) # Debug line in camera direction
-            pb.addUserDebugLine(link_p,[link_p[0]+0.1*axisY[0],link_p[1]+0.1*axisY[1],link_p[2]+0.1*axisY[2]],[1,0,0],2,0.2)
-
-        return viewMatrix
-
-    def down_view():
-        link_state = pb.getLinkState(hand,indexEndID)
-        link_p = link_state[0]
-        link_o = link_state[1]
-        handmat = pb.getMatrixFromQuaternion(link_o)
-
-        axisX = [handmat[0],handmat[3],handmat[6]]
-        axisY = [-handmat[1],-handmat[4],-handmat[7]] # Negative Y axis
-        axisZ = [handmat[2],handmat[5],handmat[8]]
-
-        eye_pos    = [link_p[0]-self.offset*axisZ[0],link_p[1]-self.offset*axisZ[1],link_p[2]-self.offset*axisZ[2]]
-        target_pos = [link_p[0]-axisZ[0],link_p[1]-axisZ[1],link_p[2]-axisZ[2]] # Target position based on negative Z axis
-        up = axisY # Up is Y axis
-        viewMatrix = pb.computeViewMatrix(eye_pos,target_pos,up)
-
-        if 'render' in self.options and self.options['render'] == True:
-            pb.addUserDebugLine(link_p,[link_p[0]-0.1*axisZ[0],link_p[1]-0.1*axisZ[1],link_p[2]-0.1*axisZ[2]],[1,0,0],2,0.05) # Debug line in camera direction
-
-        return viewMatrix
-
+        pb.resetBasePositionAndOrientation(self.agent,(obj_po[0][0],obj_po[0][1]+0.5,obj_po[0][2]),obj_po[1])
 
             #return random.random()
     def _step(self,action):
@@ -355,37 +227,3 @@ class HandEnv(sensenet.SenseEnv):
         if self.steps >= max_steps or self.is_touching():
             done = True
         return observation,reward,done,info
-
-    def is_touching(self):
-        #this function probably shouldnt be here
-        #depth_f = self.depths.flatten()
-        #m = np.ma.masked_where(depth_f>=1.0, depth_f)
-        #red_dimension = self.img_arr[:,:,0].flatten()  #TODO change this so any RGB value returns 1, anything else is 0
-        #o = (np.ma.masked_where(np.ma.getmask(m), np.absolute(red_dimension -255) > 0)).astype(int)
-        #return (np.amax(o) > 0)
-        r = self.img_arr[:,:,0]
-        #print("shape",r.size)
-        g = self.img_arr[:,:,1]
-        b = self.img_arr[:,:,2]
-        #print("g max", (np.max(g) == 0))
-        #print("b max", (np.max(b) == 0))
-        #print("r max", (np.max(r) == 0))
-        #print(np.max(r))
-        return(np.max(g) == 0 and np.max(b) == 0 and np.max(r) > 0)
-        #print("wtf", np.amax(self.current_observation) > 0)
-        #return (np.amax(self.current_observation) > 0)
-
-    def disconnect(self):
-        pb.disconnect()
-    def _reset(self):
-        # load a new object to classify
-        # move hand to 0,0,0
-        pb.resetSimulation()
-        self.load_object()
-        self.load_agent()
-        #return observation
-        self.img_arr = np.zeros(1080000).reshape(200,200,3,3,3)
-        default = np.zeros((40000))
-        self.steps = 0
-        self.current_observation = default
-        return default
