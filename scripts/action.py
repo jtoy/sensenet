@@ -6,14 +6,11 @@ sys.path.append('..')
 
 import sensenet
 from sensenet.envs.handroid.hand_env import HandEnv
-#env = HandEnv({'render':True})
-na={'render': True, 'data_path': '../../datasets/concavev2/'}
-env = HandEnv(na)
+env = HandEnv({'render':True})
 #from sensenet.envs.handroid.index_finger_hand_env import IndexFingerHandEnv
 #env = IndexFingerHandEnv({'render':True})
 
 while (1):
-  """
   key = env.getKeyboardEvents()
   n = -1
   if len(key.keys()) >= 2:
@@ -37,8 +34,6 @@ while (1):
   #      print("new number",n)
       else:
         print("key: ",k)
-  """
-  n = 2
   if n > -1:
    observation,reward,done,info = env.step(n)
 
