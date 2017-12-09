@@ -62,8 +62,8 @@ class HandEnv(sensenet.SenseEnv):
         if 'obj_path' not in self.options:
             path = self.get_data_path()
             if path == None:
-                dir_path = os.path.dirname(os.path.realpath(__file__))
-                stlfile = dir_path +"/data/key.stl"
+                dir_path = os.path.dirname(os.path.realpath(__file__))                
+                stlfile = dir_path + "/data/file.stl"                
             else:
                 files = glob.glob(path+"/**/*."+obj_type,recursive=True)
                 try:
@@ -265,9 +265,28 @@ class HandEnv(sensenet.SenseEnv):
             joint21Pos = pb.getJointState(self.agent, 21)[0]
             # need to keep the multiplier relatively small otherwise the joint will continue to move
             # when you take other actions
-            pb.setJointMotorControl2(self.agent,17,pb.POSITION_CONTROL,joint17Pos+index*0.1)
-            pb.setJointMotorControl2(self.agent,19,pb.POSITION_CONTROL,joint19Pos+index*0.1)
-            pb.setJointMotorControl2(self.agent,21,pb.POSITION_CONTROL,joint21Pos+index*0.1)
+
+            newJoint17Pos = joint17Pos + index*0.6
+            newJoint19Pos = joint19Pos + index*0.6
+            newJoint21Pos = joint21Pos + index*0.6
+            
+            # following values found by experimentation
+            if newJoint17Pos <= -0.7:
+                newJoint17Pos = -0.7
+            elif newJoint17Pos >= 0.57:
+                newJoint17Pos = 0.57
+            if newJoint19Pos <= 0.13:
+                newJoint19Pos = 0.13
+            elif newJoint19Pos >= 0.42:
+                newJoint19Pos = 0.42            
+            if newJoint21Pos <= -0.8:
+                newJoint21Pos = -0.8
+            elif newJoint21Pos >= 0.58:
+                newJoint21Pos = 0.58
+
+            pb.setJointMotorControl2(self.agent,17,pb.POSITION_CONTROL,newJoint17Pos)
+            pb.setJointMotorControl2(self.agent,19,pb.POSITION_CONTROL,newJoint19Pos)
+            pb.setJointMotorControl2(self.agent,21,pb.POSITION_CONTROL,newJoint21Pos)
             """
             pb.setJointMotorControl2(self.agent,17,pb.POSITION_CONTROL,index)
             pb.setJointMotorControl2(self.agent,19,pb.POSITION_CONTROL,index)
