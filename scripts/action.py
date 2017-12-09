@@ -1,9 +1,14 @@
 import sys
 sys.path.append('..')
-from env import SenseEnv
 import pybullet as pb
 
-env = SenseEnv({'render':True,'debug':True})
+#from env import SenseEnv
+#env = SenseEnv({'render':True,'debug':True,'obj_path':'../tests/data/pyramid.stl'})
+
+import sensenet
+from sensenet.envs.handroid.hand_env import HandEnv
+env = HandEnv({'render':True,'debug':True})
+
 while (1):
   key = pb.getKeyboardEvents()
   n = -1
