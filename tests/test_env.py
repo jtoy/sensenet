@@ -4,7 +4,7 @@ import gym
 import sensenet
 from sensenet.envs.handroid.hand_env import HandEnv
 def test_environments():
-    tenv = SenseEnv()
+    tenv = HandEnv()
     env = gym.make("CartPole-v0")
     input_dim = env.observation_space.shape[0]
     output_dim = env.action_space.n
