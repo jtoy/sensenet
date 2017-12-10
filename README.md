@@ -1,23 +1,11 @@
 # SenseNet
 SenseNet is a sensorimotor simulator and dataset of touchable 3D objects to teach AIs how to interact with their environments via sensorimotor systems and touch neurons. SenseNet is meant as a research framework for machine learning researchers and theoretical neuroscientists. 
 
-# Highlevel Goals
-
-* accelerate sensorimotor and machine learning research
-* standardized platform to reduce development time for researchers; focus on theory, not physics tweaking
-* reproducible scientific experiments
-* a suite of benchmarks to compare and contrast against
-* easily test new sensorimotor and control theories
-
 
 ![gestures](images/gestures.png?raw=true "gestures")
 
 ## Supported Systems
 We currently support Mac OS X and Linux (ubuntu 14.04), Windows mostly works, but we don't have a windows developer.  We also have vagrant/virtualbox images for you to run an any platform that supports virtualbox
-
-## Installation
-you will need python3 (python2 might work, but has not been tested), numpy, and pybullet
-
 
 ## Install from source
 git clone http://github.com/jtoy/sensenet
