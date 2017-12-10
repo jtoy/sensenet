@@ -1,13 +1,12 @@
 #!/usr/bin/env python
 import argparse
 import logging
-import sys
-
+import random
 import sys
 sys.path.append('..')
 import sensenet
-import random
 from sensenet.envs.handroid.hand_env import HandEnv
+
 logger = logging.getLogger()
 
 def main():
@@ -20,15 +19,12 @@ def main():
     elif args.verbosity >= 1:
         logger.setLevel(logging.DEBUG)
 
-
     env = HandEnv({'render':True})
     
     observation_n = env.reset()
 
     while True:
         # your agent here
-        #
-        # Try sending this instead of a random action: ('KeyEvent', 'ArrowUp', True)
         action_n = random.choice(env.action_space())
         observation_n, reward_n, done_n, info = env.step(action_n)
 
