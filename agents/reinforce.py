@@ -1,6 +1,5 @@
 import sys
 sys.path.append('..')
-
 #from env import SenseEnv
 import sensenet
 from sensenet.envs.handroid.hand_env import HandEnv
