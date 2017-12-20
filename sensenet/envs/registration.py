@@ -10,7 +10,8 @@ logger = logging.getLogger(__name__)
 #
 # 2016-10-31: We're experimentally expanding the environment ID format
 # to include an optional username.
-env_id_re = re.compile(r'^(?:[\w:-]+\/)?([\w:.-]+)-v(\d+)$')
+env_id_re = re.compile(r'^(?:[\w:-]+\/)?([\w:.-]+)$')
+#env_id_re = re.compile(r'^(?:[\w:-]+\/)?([\w:.-]+)-v(\d+)$')
 
 def load(name):
     entry_point = pkg_resources.EntryPoint.parse('x={}'.format(name))
@@ -85,8 +86,20 @@ class EnvSpec(object):
         elif callable(self._entry_point):
             env = self._entry_point()
         else:
-            cls = load(self._entry_point)
-            env = cls(**self._kwargs)
+            try:
+                cls = load(self._entry_point)
+                env = cls(**self._kwargs)
+            except ModuleNotFoundError:
+                #load envs directory if it exists
+                import os,sys,importlib
+                lib_path = os.getcwd() + os.sep + 'envs'
+                sys.path.insert(0,lib_path)
+                def snake(name):
+                    s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
+                    return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
+                mod = importlib.import_module(snake(self._entry_point))
+                my_class = getattr(mod, self._entry_point)
+                env = my_class()
 
         # Make the enviroment aware of which spec it came from.
         env.unwrapped._spec = self
