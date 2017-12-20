@@ -1,6 +1,8 @@
 import sys, argparse
 sys.path.append('..')
-from env import SenseEnv
+#from env import SenseEnv
+import sensenet
+from sensenet.envs.handroid.hand_env import HandEnv
 import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
@@ -241,8 +243,8 @@ if __name__ == "__main__":
       
     args = parser.parse_args()
 
-    env = SenseEnv(vars(args))
-
+    #env = SenseEnv(vars(args))
+    env = HandEnv(vars(args))
     num_games = 20
     game_length = 1000
     e_greedy_inc = 0.05/game_length # want to increase by 0.05 per game so we spend enough time exploring
