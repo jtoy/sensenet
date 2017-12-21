@@ -10,7 +10,8 @@ logger = logging.getLogger(__name__)
 #
 # 2016-10-31: We're experimentally expanding the environment ID format
 # to include an optional username.
-env_id_re = re.compile(r'^(?:[\w:-]+\/)?([\w:.-]+)-v(\d+)$')
+env_id_re = re.compile(r'^(?:[\w:-]+\/)?([\w:.-]+)$')
+#env_id_re = re.compile(r'^(?:[\w:-]+\/)?([\w:.-]+)-v(\d+)$')
 
 def load(name):
     entry_point = pkg_resources.EntryPoint.parse('x={}'.format(name))
@@ -77,7 +78,7 @@ class EnvSpec(object):
         self._local_only = local_only
         self._kwargs = {} if kwargs is None else kwargs
 
-    def make(self):
+    def make(self,options={}):
         """Instantiates an instance of the environment with appropriate kwargs"""
         if self._entry_point is None:
             raise error.Error('Attempting to make deprecated env {}. (HINT: is there a newer registered version of this env?)'.format(self.id))
@@ -85,8 +86,22 @@ class EnvSpec(object):
         elif callable(self._entry_point):
             env = self._entry_point()
         else:
-            cls = load(self._entry_point)
-            env = cls(**self._kwargs)
+            try:
+                cls = load(self._entry_point)
+                #env = cls(**self._kwargs)
+                #TODO merge use of kwargs and options
+                env = cls(options)
+            except ModuleNotFoundError:
+                #load envs directory if it exists
+                import os,sys,importlib
+                lib_path = os.getcwd() + os.sep + 'envs'
+                sys.path.insert(0,lib_path)
+                def snake(name):
+                    s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
+                    return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
+                mod = importlib.import_module(snake(self._entry_point))
+                my_class = getattr(mod, self._entry_point)
+                env = my_class(options)
 
         # Make the enviroment aware of which spec it came from.
         env.unwrapped._spec = self
@@ -119,7 +134,7 @@ class EnvRegistry(object):
     def make(self, id,options={}):
         logger.info('Making new env: %s', id)
         spec = self.spec(id)
-        env = spec.make()
+        env = spec.make(options)
         #if (env.spec.timestep_limit is not None) and not spec.tags.get('vnc'):
         #    from sensenet.wrappers.time_limit import TimeLimit
         #    env = TimeLimit(env,
@@ -160,8 +175,8 @@ registry = EnvRegistry()
 def register(id, **kwargs):
     return registry.register(id, **kwargs)
 
-def make(id):
-    return registry.make(id)
+def make(id,options={}):
+    return registry.make(id,options)
 
 def spec(id):
     return registry.spec(id)

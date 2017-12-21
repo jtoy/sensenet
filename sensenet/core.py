@@ -1,4 +1,4 @@
-import logging
+import logging,os
 logger = logging.getLogger(__name__)
 
 import numpy as np
@@ -182,6 +182,12 @@ class SenseEnv(object):
               this won't be true if seed=None, for example.
         """
         return self._seed(seed)
+
+    def mkdir_p(self,path):
+        try:
+            os.makedirs(path)
+        except OSError as exc:  # Python >2.5
+            pass
 
     @property
     def spec(self):
