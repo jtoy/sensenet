@@ -1,8 +1,4 @@
-import sys
-sys.path.append('..')
-#from env import SenseEnv
 import sensenet
-from sensenet.envs.handroid.hand_env import HandEnv
 
 import torch
 import torch.nn as nn
@@ -31,7 +27,7 @@ parser.add_argument('--log', type=str, help='log experiment to tensorboard')
 parser.add_argument('--model_path', type=str, help='path to store/retrieve model at')
 parser.add_argument('--data_path', type=str,default='./objects', help='path to training data')
 parser.add_argument('--name', type=str, help='name for logs/model')
-parser.add_argument('--mode', type=str, default="train", help='train/test/all model')
+parser.add_argument('--mode', type=str, default="all", help='train/test/all model')
 parser.add_argument('--num_episodes', type=int, default=1000, help='number of episodes')
 parser.add_argument('--max_steps', type=int, default=500, help='number of steps per episode')
 parser.add_argument('--obj_type', type=str, default="obj", help='obj or stl')
@@ -189,8 +185,8 @@ def finish_episode_learning(model, optimizer):
 
 # Training:
 
-#env = SenseEnv(vars(args))
-env = HandEnv(vars(args))
+#env = HandEnv(vars(args))
+env = sensenet.make("HandEnv-v0",vars(args))
 print("action space: ",env.action_space(),env.action_space_n())
 print("class count: ",env.classification_n())
 model = Policy(env.observation_space(),env.action_space_n())
@@ -215,7 +211,7 @@ total_steps = 0
 touched_episodes = 0
 steps_to_first_touch = []
   
-if args.mode == "train":
+if args.mode == "all" or args.mode == "train":
 
   for i_episode in range(args.num_episodes):
     # New object (aka new episode)
@@ -294,7 +290,7 @@ if args.mode == "train":
   if len(steps_to_first_touch) > 0:
     print("average steps to first touch", np.mean(steps_to_first_touch))
 
-elif args.mode == "test":
+if args.mode == "all" or args.mode == "test":
   test_labels = []
   predicted_labels = []
   steps_to_guess = []
@@ -307,7 +303,7 @@ elif args.mode == "test":
     # New object (aka new episode)
     observation = env.reset()
     observed_touches = []
-    print("episode:", i_episode)
+    print("test episode:", i_episode)
 
     for step in range(args.max_steps):
       # Move and touch the object in this loop. Record touches only as inputs.
@@ -339,11 +335,3 @@ elif args.mode == "test":
 
   print('Accuracy of the network: %d %%' % (100 * total_correct / total )) 
   print('touched ',  touched_episodes, ' times') 
-
-else:
-  for i_episode in range(args.num_episodes):
-    observation = env.reset()
-    for step in range(1000):
-      action = np.random.choice(env.action_space_n())
-      observation,reward,done,info = env.step(action)
-      print(observation)
