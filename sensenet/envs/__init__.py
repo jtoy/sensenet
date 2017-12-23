@@ -14,6 +14,10 @@ register(
     max_episode_steps=1000,
     reward_threshold=5000.0,
     )
+register(
+    id='BlankEnv-v0',
+    entry_point='sensenet.envs.handroid:BlankEnv',
+    )
 
 # if folder envs from current code exists, register it
 cwd = os.getcwd()
@@ -27,4 +31,3 @@ if os.path.isdir(cwd+"/envs"):
             entry_point_name += name.capitalize()
 
         register(id=entry_point_name,entry_point=entry_point_name)
-
