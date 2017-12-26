@@ -3,11 +3,13 @@ import numpy as np
 import time,os,math,inspect,re,errno
 import random,glob,math
 from shutil import copyfile
+
 import sensenet
 from sensenet.error import Error
 from sensenet.utils import mkdir_p
+from sensenet.envs.handroid.hand_env import HandEnv
 
-class IndexFingerHandEnv(sensenet.HandEnv):
+class IndexFingerHandEnv(HandEnv):
 
     def __init__(self,options={}):
         self.options = options
@@ -22,33 +24,93 @@ class IndexFingerHandEnv(sensenet.HandEnv):
             pb.connect(pb.GUI)
         else:
             pb.connect(pb.DIRECT)
+        self.timeStep = 0.25
+        pb.setPhysicsEngineParameter(fixedTimeStep=self.timeStep)
         pb.setGravity(0,0,0)
         pb.setRealTimeSimulation(0)
-        self.move = 0.05 # 0.01
+        self.move = 0.05 #0.05 # 0.01
+        self.pi = 3.1415926535
+        self.tinyForce = 3*10e-3
         self.load_object()
         self.load_agent()
-        self.pi = 3.1415926535
+
         self.pinkId = 0
         self.middleId = 1
         self.indexId = 2
         self.thumbId = 3
         self.ring_id = 4
-        self.indexEndID = 21 # Need get position and orientation from index finger parts
+        self.indexEndID = 14 # Need get position and orientation from index finger parts
         self.offset = 0.02 # Offset from basic position
         self.downCameraOn = False
         self.prev_distance = 10000000
 
     def load_agent(self):
-        objects = pb.loadMJCF("MPL/MPL.xml",flags=0)
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        agent_path = dir_path + "/data/MPL/MPL.xml"
+        objects = pb.loadMJCF(agent_path,flags=0)
         self.agent=objects[0]  #1 total
         #if self.obj_to_classify:
         obj_po = pb.getBasePositionAndOrientation(self.obj_to_classify)
         self.hand_cid = pb.createConstraint(self.agent,-1,-1,-1,pb.JOINT_FIXED,[0,0,0],[0,0,0],[0,0,0])
-            #hand_po = pb.getBasePositionAndOrientation(self.agent)
-            #distance = math.sqrt(sum([(xi-yi)**2 for xi,yi in zip(obj_po[0],hand_po[0])])) #TODO faster euclidean
+        #hand_po = pb.getBasePositionAndOrientation(self.agent)
+        #distance = math.sqrt(sum([(xi-yi)**2 for xi,yi in zip(obj_po[0],hand_po[0])])) #TODO faster euclidean
         pb.resetBasePositionAndOrientation(self.agent,(obj_po[0][0],obj_po[0][1]+0.5,obj_po[0][2]),obj_po[1])
 
+        hand_po = pb.getBasePositionAndOrientation(self.agent)
+
+        ho = pb.getQuaternionFromEuler([0.0, 0.0, 0.0])
+        pb.changeConstraint(self.hand_cid,(hand_po[0][0],hand_po[0][1],hand_po[0][2]),ho, maxForce=200)
+        
+        joint7Pos = pb.getJointState(self.agent, 7)[0]
+        joint24Pos = pb.getJointState(self.agent, 24)[0]
+        joint32Pos = pb.getJointState(self.agent, 32)[0]
+        joint40Pos = pb.getJointState(self.agent, 40)[0]
+        
+        # these are pretty close
+        joint7tgt = self.pi/4 # thumb
+        joint9tgt = self.pi/2
+        joint11tgt = self.pi/2
+        joint13tgt = self.pi/2
+        # pretty close
+        joint24tgt = self.pi/2.25 # middle finger
+        joint26tgt = self.pi/2
+        joint28tgt = self.pi/2
+        # working
+        joint32tgt = self.pi/2.5 # ring finger
+        joint34tgt = self.pi/2
+        joint36tgt = self.pi/2
+        # pretty close
+        joint40tgt = self.pi/3 # pinky
+        joint42tgt = self.pi/2
+        joint44tgt = self.pi/2
+
+        while (joint7Pos < joint7tgt) and (joint24Pos < joint24tgt) and (joint32Pos < joint32tgt) and (joint40Pos < joint40tgt):
+
+            pb.setJointMotorControl2(self.agent,7,pb.POSITION_CONTROL,joint7tgt) 
+            pb.setJointMotorControl2(self.agent,9,pb.POSITION_CONTROL,joint9tgt)
+            pb.setJointMotorControl2(self.agent,11,pb.POSITION_CONTROL,joint11tgt)
+            pb.setJointMotorControl2(self.agent,13,pb.POSITION_CONTROL,joint13tgt)
+
+            pb.setJointMotorControl2(self.agent,24,pb.POSITION_CONTROL,joint24tgt)
+            pb.setJointMotorControl2(self.agent,26,pb.POSITION_CONTROL,joint26tgt)
+            pb.setJointMotorControl2(self.agent,28,pb.POSITION_CONTROL,joint28tgt)
+
+            pb.setJointMotorControl2(self.agent,32,pb.POSITION_CONTROL,joint32tgt)
+            pb.setJointMotorControl2(self.agent,34,pb.POSITION_CONTROL,joint34tgt)
+            pb.setJointMotorControl2(self.agent,36,pb.POSITION_CONTROL,joint36tgt)
+            
+            pb.setJointMotorControl2(self.agent,40,pb.POSITION_CONTROL,joint40tgt)
+            pb.setJointMotorControl2(self.agent,42,pb.POSITION_CONTROL,joint42tgt)
+            pb.setJointMotorControl2(self.agent,44,pb.POSITION_CONTROL,joint44tgt)
+ 
+            pb.stepSimulation()
+
+            joint7Pos = pb.getJointState(self.agent, 7)[0]
+            joint24Pos = pb.getJointState(self.agent, 24)[0]
+            joint32Pos = pb.getJointState(self.agent, 32)[0]
+            joint40Pos = pb.getJointState(self.agent, 40)[0]
             #return random.random()
+        
     def _step(self,action):
         done = False
         #reward (float): amount of reward achieved by the previous action. The scale varies between environments, but the goal is always to increase your total reward.
@@ -88,61 +150,44 @@ class IndexFingerHandEnv(sensenet.HandEnv):
         lightColor = [1,1,1]#optional
         fov = 50  #10 or 50
         hand_po = pb.getBasePositionAndOrientation(self.agent)
-        ho = pb.getQuaternionFromEuler([0.0, 0.0, 0.0])
-        
+        ho = pb.getQuaternionFromEuler([0.0, 0.0, 0.0])        
+       
         # So when trying to modify the physics of the engine, we run into some problems. If we leave
         # angular damping at default (0.04) then the hand rotates when moving up and dow, due to torque.
         # If we set angularDamping to 100.0 then the hand will bounce off into the background due to 
         # all the stored energy, when it makes contact with the object. The below set of parameters seem
         # to have a reasonably consistent performance in keeping the hand level and not inducing unwanted
         # behavior during contact. 
-        pb.changeDynamics(self.agent, linkIndex=-1, spinningFriction=100.0, angularDamping=35.0,
-                contactStiffness=0.0, contactDamping=100)
-       
+
+        pb.changeDynamics(self.agent, linkIndex=-1, angularDamping=0.9)
+
         if action == 65298 or action == 0: #down
-            pb.changeConstraint(self.hand_cid,(hand_po[0][0]+self.move,hand_po[0][1],hand_po[0][2]),ho, maxForce=50)
+            pb.changeConstraint(self.hand_cid,(hand_po[0][0]+self.move,hand_po[0][1],hand_po[0][2]),ho, maxForce=self.tinyForce)
         elif action == 65297 or action == 1: #up            
-            pb.changeConstraint(self.hand_cid,(hand_po[0][0]-self.move,hand_po[0][1],hand_po[0][2]),ho, maxForce=50)
+            pb.changeConstraint(self.hand_cid,(hand_po[0][0]-self.move,hand_po[0][1],hand_po[0][2]),ho, maxForce=self.tinyForce)
         elif action == 65295 or action == 2: #left            
-            pb.changeConstraint(self.hand_cid,(hand_po[0][0],hand_po[0][1]+self.move,hand_po[0][2]),ho, maxForce=50)
+            pb.changeConstraint(self.hand_cid,(hand_po[0][0],hand_po[0][1]+self.move,hand_po[0][2]),ho, maxForce=self.tinyForce)
         elif action== 65296 or action == 3: #right            
-            pb.changeConstraint(self.hand_cid,(hand_po[0][0],hand_po[0][1]-self.move,hand_po[0][2]),ho, maxForce=50)
+            pb.changeConstraint(self.hand_cid,(hand_po[0][0],hand_po[0][1]-self.move,hand_po[0][2]),ho, maxForce=self.tinyForce)
         elif action == 44 or action == 4: #<        
-            pb.changeConstraint(self.hand_cid,(hand_po[0][0],hand_po[0][1],hand_po[0][2]+self.move), ho, maxForce=50)            
+            pb.changeConstraint(self.hand_cid,(hand_po[0][0],hand_po[0][1],hand_po[0][2]+self.move),ho, maxForce=self.tinyForce)            
         elif action == 46 or action == 5: #>            
-            pb.changeConstraint(self.hand_cid,(hand_po[0][0],hand_po[0][1],hand_po[0][2]-self.move), ho, maxForce=50)
+            pb.changeConstraint(self.hand_cid,(hand_po[0][0],hand_po[0][1],hand_po[0][2]-self.move),ho, maxForce=self.tinyForce)
         elif action >= 6 and action <= 7:
             # keeps the hand from moving towards origin
-            pb.changeConstraint(self.hand_cid,(hand_po[0][0],hand_po[0][1],hand_po[0][2]),ho, maxForce=50)
+            pb.changeConstraint(self.hand_cid,(hand_po[0][0],hand_po[0][1],hand_po[0][2]),ho, maxForce=200)
             if action == 7:
                 action = 25 #bad kludge redo all this code
-            """
-            self.pinkId = 0
-            self.middleId = 1
-            self.indexId = 2
-            self.thumbId = 3
-            self.ring_id = 4
-            
-            pink = convertSensor(self.pinkId) #pinkId != indexId -> return random uniform
-            middle = convertSensor(self.middleId) # middleId != indexId -> return random uniform
-            
-            thumb = convertSensor(self.thumbId) # thumbId != indexId -> return random uniform
-            ring = convertSensor(self.ring_id) # ring_id != indexId -> return random uniform
-            """
+
             index = convertAction(action) # action = 6 or 25 due to kludge -> return -1 or 1                        
-            """
-            pb.setJointMotorControl2(self.agent,7,pb.POSITION_CONTROL,self.pi/4.) 
-            pb.setJointMotorControl2(self.agent,9,pb.POSITION_CONTROL,thumb+self.pi/10)
-            pb.setJointMotorControl2(self.agent,11,pb.POSITION_CONTROL,thumb)
-            pb.setJointMotorControl2(self.agent,13,pb.POSITION_CONTROL,thumb)
-            """
+
             # Getting positions of the index joints to use for moving to a relative position
             joint17Pos = pb.getJointState(self.agent, 17)[0]
             joint19Pos = pb.getJointState(self.agent, 19)[0]
             joint21Pos = pb.getJointState(self.agent, 21)[0]
             # need to keep the multiplier relatively small otherwise the joint will continue to move
             # when you take other actions
-            finger_jump = 0.2
+            finger_jump = 0.1
             newJoint17Pos = joint17Pos + index*finger_jump
             newJoint19Pos = joint19Pos + index*finger_jump
             newJoint21Pos = joint21Pos + index*finger_jump
@@ -164,24 +209,7 @@ class IndexFingerHandEnv(sensenet.HandEnv):
             pb.setJointMotorControl2(self.agent,17,pb.POSITION_CONTROL,newJoint17Pos)
             pb.setJointMotorControl2(self.agent,19,pb.POSITION_CONTROL,newJoint19Pos)
             pb.setJointMotorControl2(self.agent,21,pb.POSITION_CONTROL,newJoint21Pos)
-            """
-            pb.setJointMotorControl2(self.agent,17,pb.POSITION_CONTROL,index)
-            pb.setJointMotorControl2(self.agent,19,pb.POSITION_CONTROL,index)
-            pb.setJointMotorControl2(self.agent,21,pb.POSITION_CONTROL,index)
-            
-            pb.setJointMotorControl2(self.agent,24,pb.POSITION_CONTROL,middle)
-            pb.setJointMotorControl2(self.agent,26,pb.POSITION_CONTROL,middle)
-            pb.setJointMotorControl2(self.agent,28,pb.POSITION_CONTROL,middle)
 
-            pb.setJointMotorControl2(self.agent,40,pb.POSITION_CONTROL,pink)
-            pb.setJointMotorControl2(self.agent,42,pb.POSITION_CONTROL,pink)
-            pb.setJointMotorControl2(self.agent,44,pb.POSITION_CONTROL,pink)
-
-            ringpos = 0.5*(pink+middle)
-            pb.setJointMotorControl2(self.agent,32,pb.POSITION_CONTROL,ringpos)
-            pb.setJointMotorControl2(self.agent,34,pb.POSITION_CONTROL,ringpos)
-            pb.setJointMotorControl2(self.agent,36,pb.POSITION_CONTROL,ringpos)
-            """
         if self.downCameraOn: viewMatrix = down_view()
         else: viewMatrix = self.ahead_view()
         projectionMatrix = pb.computeProjectionMatrixFOV(fov,aspect,nearPlane,farPlane)
@@ -189,14 +217,13 @@ class IndexFingerHandEnv(sensenet.HandEnv):
         #w,h,img_arr,depths,mask = pb.getCameraImage(200,200, viewMatrix,projectionMatrix, lightDirection,lightColor,renderer=pb.ER_BULLET_HARDWARE_OPENGL)
         #red_dimension = img_arr[:,:,0]  #TODO change this so any RGB value returns 1, anything else is 0
         red_dimension = img_arr[:,:,0].flatten()  #TODO change this so any RGB value returns 1, anything else is 0
-        #observation = red_dimension
-        self.img_arr = img_arr
-        observation = (np.absolute(red_dimension -255) > 0).astype(int)
-        self.current_observation = observation
+        self.img_arr = img_arr     
+        observation = (np.absolute(red_dimension - 255) > 0).astype(int)
         self.img_arr = img_arr
         self.depths= depths
         info = [42] #answer to life,TODO use real values
         pb.stepSimulation()
+
         self.steps +=1
         #reward if moving towards the object or touching the object
         reward = 0
