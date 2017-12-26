@@ -24,13 +24,13 @@ class IndexFingerHandEnv(HandEnv):
             pb.connect(pb.GUI)
         else:
             pb.connect(pb.DIRECT)
-        self.timeStep = 0.25
+        self.timeStep = 0.6 # 0.04 by default
         pb.setPhysicsEngineParameter(fixedTimeStep=self.timeStep)
         pb.setGravity(0,0,0)
         pb.setRealTimeSimulation(0)
-        self.move = 0.05 #0.05 # 0.01
+        self.move = 0.1 #0.05 # 0.01
         self.pi = 3.1415926535
-        self.tinyForce = 3*10e-3
+        self.tinyForce = 5*10e-6
         self.load_object()
         self.load_agent()
 
@@ -110,7 +110,7 @@ class IndexFingerHandEnv(HandEnv):
             joint32Pos = pb.getJointState(self.agent, 32)[0]
             joint40Pos = pb.getJointState(self.agent, 40)[0]
             #return random.random()
-        
+    
     def _step(self,action):
         done = False
         #reward (float): amount of reward achieved by the previous action. The scale varies between environments, but the goal is always to increase your total reward.
@@ -159,7 +159,7 @@ class IndexFingerHandEnv(HandEnv):
         # to have a reasonably consistent performance in keeping the hand level and not inducing unwanted
         # behavior during contact. 
 
-        pb.changeDynamics(self.agent, linkIndex=-1, angularDamping=0.9)
+        pb.changeDynamics(self.agent, linkIndex=-1, angularDamping=0.9999)
 
         if action == 65298 or action == 0: #down
             pb.changeConstraint(self.hand_cid,(hand_po[0][0]+self.move,hand_po[0][1],hand_po[0][2]),ho, maxForce=self.tinyForce)
