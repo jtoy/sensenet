@@ -39,7 +39,7 @@ class IndexFingerHandEnv(HandEnv):
         self.indexId = 2
         self.thumbId = 3
         self.ring_id = 4
-        self.indexEndID = 14 # Need get position and orientation from index finger parts
+        self.indexEndID = 21 # Need get position and orientation from index finger parts
         self.offset = 0.02 # Offset from basic position
         self.downCameraOn = False
         self.prev_distance = 10000000
