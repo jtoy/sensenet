@@ -1,0 +1,30 @@
+﻿Making project PIP installable.
+
+For all the details follow the link - https://packaging.python.org/tutorials/distributing-packages/ 
+
+Requirements:
+1. Setup.py - The file containing the global setup() function required to specify details of project requirements.
+2. Setup.cfg - Contains default options for Setup.py file.
+
+Optional requirements:
+1. README.md or README.rst
+2. Manifest.in
+3. License.txt
+
+Steps to follow :
+On terminal - 
+1. pip install twine (required for uploading project to PyPI later)
+
+2. pip install -e (Optional - required if project is in development mode)
+
+3. python setup.py sdist (creates unbuilt source distribution)
+
+4. pip install wheel (a built package that can be installed without going through 'build' process)
+
+5. python setup.py bdist_wheel (build the wheel)
+
+Create an account on PyPI.
+
+6. twine upload dist/* (The newly created dist folder in the project's root directory is uploaded on the PyPI)
+
+
