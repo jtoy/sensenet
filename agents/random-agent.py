@@ -10,6 +10,7 @@ logger = logging.getLogger()
 def main():
     parser = argparse.ArgumentParser(description=None)
     parser.add_argument('-v', '--verbose', action='count', dest='verbosity', default=0, help='Set verbosity.')
+    parser.add_argument('-e', '--environment', dest='environment', default='HandEnv-v0', help='Set environment')
     args = parser.parse_args()
 
     if args.verbosity == 0:
@@ -17,7 +18,7 @@ def main():
     elif args.verbosity >= 1:
         logger.setLevel(logging.DEBUG)
 
-    env = sensenet.make("HandEnv-v0",{'render':True})
+    env = sensenet.make(args.environment,{'render':True})
     
     observation_n = env.reset()
 
