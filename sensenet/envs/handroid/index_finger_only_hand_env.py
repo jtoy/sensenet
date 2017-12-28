@@ -9,7 +9,7 @@ from sensenet.error import Error
 from sensenet.utils import mkdir_p
 from sensenet.envs.handroid.hand_env import HandEnv
 
-class IndexFingerHandEnv(HandEnv):
+class IndexFingerOnlyHandEnv(HandEnv):
 
     def __init__(self,options={}):
         self.options = options
@@ -39,14 +39,14 @@ class IndexFingerHandEnv(HandEnv):
         self.indexId = 2
         self.thumbId = 3
         self.ring_id = 4
-        self.indexEndID = 21 # Need get position and orientation from index finger parts
+        self.indexEndID = 14 # Need get position and orientation from index finger parts
         self.offset = 0.02 # Offset from basic position
         self.downCameraOn = False
         self.prev_distance = 10000000
 
     def load_agent(self):
         dir_path = os.path.dirname(os.path.realpath(__file__))
-        agent_path = dir_path + "/data/MPL/MPL.xml"
+        agent_path = dir_path + "/data/MPL/MPL_index_only.xml"
         objects = pb.loadMJCF(agent_path,flags=0)
         self.agent=objects[0]  #1 total
         #if self.obj_to_classify:
@@ -61,56 +61,7 @@ class IndexFingerHandEnv(HandEnv):
         ho = pb.getQuaternionFromEuler([0.0, 0.0, 0.0])
         pb.changeConstraint(self.hand_cid,(hand_po[0][0],hand_po[0][1],hand_po[0][2]),ho, maxForce=200)
         
-        joint7Pos = pb.getJointState(self.agent, 7)[0]
-        joint24Pos = pb.getJointState(self.agent, 24)[0]
-        joint32Pos = pb.getJointState(self.agent, 32)[0]
-        joint40Pos = pb.getJointState(self.agent, 40)[0]
-        
-        # these are pretty close
-        joint7tgt = self.pi/4 # thumb
-        joint9tgt = self.pi/2
-        joint11tgt = self.pi/2
-        joint13tgt = self.pi/2
-        # pretty close
-        joint24tgt = self.pi/2.25 # middle finger
-        joint26tgt = self.pi/2
-        joint28tgt = self.pi/2
-        # working
-        joint32tgt = self.pi/2.5 # ring finger
-        joint34tgt = self.pi/2
-        joint36tgt = self.pi/2
-        # pretty close
-        joint40tgt = self.pi/3 # pinky
-        joint42tgt = self.pi/2
-        joint44tgt = self.pi/2
-
-        while (joint7Pos < joint7tgt) and (joint24Pos < joint24tgt) and (joint32Pos < joint32tgt) and (joint40Pos < joint40tgt):
-
-            pb.setJointMotorControl2(self.agent,7,pb.POSITION_CONTROL,joint7tgt) 
-            pb.setJointMotorControl2(self.agent,9,pb.POSITION_CONTROL,joint9tgt)
-            pb.setJointMotorControl2(self.agent,11,pb.POSITION_CONTROL,joint11tgt)
-            pb.setJointMotorControl2(self.agent,13,pb.POSITION_CONTROL,joint13tgt)
-
-            pb.setJointMotorControl2(self.agent,24,pb.POSITION_CONTROL,joint24tgt)
-            pb.setJointMotorControl2(self.agent,26,pb.POSITION_CONTROL,joint26tgt)
-            pb.setJointMotorControl2(self.agent,28,pb.POSITION_CONTROL,joint28tgt)
-
-            pb.setJointMotorControl2(self.agent,32,pb.POSITION_CONTROL,joint32tgt)
-            pb.setJointMotorControl2(self.agent,34,pb.POSITION_CONTROL,joint34tgt)
-            pb.setJointMotorControl2(self.agent,36,pb.POSITION_CONTROL,joint36tgt)
-            
-            pb.setJointMotorControl2(self.agent,40,pb.POSITION_CONTROL,joint40tgt)
-            pb.setJointMotorControl2(self.agent,42,pb.POSITION_CONTROL,joint42tgt)
-            pb.setJointMotorControl2(self.agent,44,pb.POSITION_CONTROL,joint44tgt)
- 
-            pb.stepSimulation()
-
-            joint7Pos = pb.getJointState(self.agent, 7)[0]
-            joint24Pos = pb.getJointState(self.agent, 24)[0]
-            joint32Pos = pb.getJointState(self.agent, 32)[0]
-            joint40Pos = pb.getJointState(self.agent, 40)[0]
-            #return random.random()
-    
+           
     def _step(self,action):
         done = False
         #reward (float): amount of reward achieved by the previous action. The scale varies between environments, but the goal is always to increase your total reward.
@@ -182,33 +133,35 @@ class IndexFingerHandEnv(HandEnv):
             index = convertAction(action) # action = 6 or 25 due to kludge -> return -1 or 1                        
 
             # Getting positions of the index joints to use for moving to a relative position
-            joint17Pos = pb.getJointState(self.agent, 17)[0]
-            joint19Pos = pb.getJointState(self.agent, 19)[0]
-            joint21Pos = pb.getJointState(self.agent, 21)[0]
+            joint9Pos = pb.getJointState(self.agent, 9)[0]
+            joint11Pos = pb.getJointState(self.agent, 11)[0]
+            joint13Pos = pb.getJointState(self.agent, 13)[0]
             # need to keep the multiplier relatively small otherwise the joint will continue to move
             # when you take other actions
             finger_jump = 0.1
-            newJoint17Pos = joint17Pos + index*finger_jump
-            newJoint19Pos = joint19Pos + index*finger_jump
-            newJoint21Pos = joint21Pos + index*finger_jump
+            newJoint9Pos = joint9Pos + index*finger_jump
+            newJoint11Pos = joint11Pos + index*finger_jump
+            newJoint13Pos = joint13Pos + index*finger_jump
             
             # following values found by experimentation
-            if newJoint17Pos <= -0.7:
-                newJoint17Pos = -0.7
-            elif newJoint17Pos >= 0.57:
-                newJoint17Pos = 0.57
-            if newJoint19Pos <= 0.13:
-                newJoint19Pos = 0.13
-            elif newJoint19Pos >= 0.42:
-                newJoint19Pos = 0.42            
-            if newJoint21Pos <= -0.8:
-                newJoint21Pos = -0.8
-            elif newJoint21Pos >= 0.58:
-                newJoint21Pos = 0.58
+            if newJoint9Pos <= -0.7:
+                newJoint9Pos = -0.7
+            elif newJoint9Pos >= 0.57:
+                newJoint9Pos = 0.57
+            
+            if newJoint11Pos <= 0.13:
+                newJoint11Pos = 0.13
+            elif newJoint11Pos >= 0.42:
+                newJoint11Pos = 0.42            
+            
+            if newJoint13Pos <= -0.8:
+                newJoint13Pos = -0.8
+            elif newJoint13Pos >= 0.58:
+                newJoint13Pos = 0.58
 
-            pb.setJointMotorControl2(self.agent,17,pb.POSITION_CONTROL,newJoint17Pos)
-            pb.setJointMotorControl2(self.agent,19,pb.POSITION_CONTROL,newJoint19Pos)
-            pb.setJointMotorControl2(self.agent,21,pb.POSITION_CONTROL,newJoint21Pos)
+            pb.setJointMotorControl2(self.agent,9,pb.POSITION_CONTROL,newJoint9Pos)
+            pb.setJointMotorControl2(self.agent,11,pb.POSITION_CONTROL,newJoint11Pos)
+            pb.setJointMotorControl2(self.agent,13,pb.POSITION_CONTROL,newJoint13Pos)
 
         if self.downCameraOn: viewMatrix = down_view()
         else: viewMatrix = self.ahead_view()

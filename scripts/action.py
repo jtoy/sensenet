@@ -6,9 +6,9 @@ sys.path.append('..')
 
 import sensenet
 from sensenet.envs.handroid.hand_env import HandEnv
-env = HandEnv({'render':True})
-#from sensenet.envs.handroid.index_finger_hand_env import IndexFingerHandEnv
-#env = IndexFingerHandEnv({'render':True})
+#env = HandEnv({'render':True})
+from sensenet.envs.handroid.index_finger_only_hand_env import IndexFingerOnlyHandEnv
+env = IndexFingerOnlyHandEnv({'render':True})
 
 while (1):
   key = env.getKeyboardEvents()
