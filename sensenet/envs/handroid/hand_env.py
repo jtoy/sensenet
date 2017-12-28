@@ -49,18 +49,17 @@ class HandEnv(sensenet.SenseEnv):
         self.prev_distance = 10000000
     def load_object(self):
         #we assume that the directory structure is: SOMEPATH/classname/SHA_NAME/file
-        #TODO make path configurable
         #TODO refactor this whole mess later
         obj_x = 0
         obj_y = -1
         obj_z = 0
         if 'obj_type' in self.options:
             obj_type = self.options['obj_type']
-        elif 'obj_path' in self.options and 'obj' in self.options['obj_path']:
+        elif 'obj_path' in self.options and self.options['obj_path'] != None and 'obj' in self.options['obj_path']:
             obj_type = 'obj'
         else: #TODO change default to obj after more performance testing
             obj_type = 'stl'
-        if 'obj_path' not in self.options:
+        if 'obj_path' not in self.options or ('obj_path' in self.options and self.options['obj_path'] == None):
             path = self.get_data_path()
             if path == None:
                 dir_path = os.path.dirname(os.path.realpath(__file__))                
@@ -320,10 +319,14 @@ class HandEnv(sensenet.SenseEnv):
         red_dimension = img_arr[:,:,0].flatten()  #TODO change this so any RGB value returns 1, anything else is 0
         #observation = red_dimension
         self.img_arr = img_arr
-        observation = (np.absolute(red_dimension -255) > 0).astype(int)
-        self.current_observation = observation
-        self.img_arr = img_arr
+        self.depths = depths
+        new_obs = np.absolute(depths-1.0)
+        new_obs[new_obs > 0] =1
         self.depths= depths
+        observation = (np.absolute(red_dimension -255) > 0).astype(int)
+        #self.current_observation = observation
+        self.current_observation = new_obs
+        self.img_arr = img_arr
         info = [42] #answer to life,TODO use real values
         pb.stepSimulation()
         self.steps +=1
@@ -364,17 +367,19 @@ class HandEnv(sensenet.SenseEnv):
         #red_dimension = self.img_arr[:,:,0].flatten()  #TODO change this so any RGB value returns 1, anything else is 0
         #o = (np.ma.masked_where(np.ma.getmask(m), np.absolute(red_dimension -255) > 0)).astype(int)
         #return (np.amax(o) > 0)
-        r = self.img_arr[:,:,0]
-        #print("shape",r.size)
-        g = self.img_arr[:,:,1]
-        b = self.img_arr[:,:,2]
+        #if self.img_arr == None:
+        #  return False
+        #r = self.img_arr[:,:,0]
+        #g = self.img_arr[:,:,1]
+        #b = self.img_arr[:,:,2]
+        #return(np.max(g) == 0 and np.max(b) == 0 and np.max(r) > 0)
+        points = pb.getContactPoints(self.agent,self.obj_to_classify)
+        return len(points) > 0 and np.amax(self.current_observation > 0)
         #print("g max", (np.max(g) == 0))
         #print("b max", (np.max(b) == 0))
         #print("r max", (np.max(r) == 0))
         #print(np.max(r))
-        return(np.max(g) == 0 and np.max(b) == 0 and np.max(r) > 0)
         #print("wtf", np.amax(self.current_observation) > 0)
-        #return (np.amax(self.current_observation) > 0)
 
     def disconnect(self):
         pb.disconnect()

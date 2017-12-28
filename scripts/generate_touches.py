@@ -68,12 +68,12 @@ while (1):
      #elif random.random() > 0.3 and zd >= xd and zd >= yd:
        #print('z')
        action = down
-     elif random.random() > 0.5 and xd >= yd:
+     elif random.random() > 0.4 and xd >= yd:
      #if random.random() > 0.3 and xd >= yd and xd >= zd:
        #print('x')
        #action = forward
        action = left
-     elif random.random() > 0.5 and yd >= xd:
+     elif random.random() > 0.3 and yd >= xd:
      #elif random.random() > 0.3 and yd >= xd and yd >= zd:
        #print('y')
        #action = left
@@ -103,7 +103,7 @@ while (1):
    elif step >= 100:
      print("closing episode,touch_count",touch_count)
      touch_count = 0
-     if len(observations) > 0:
+     if len(observations) > 1:
        training_sets.append([observations,actions])
      observations = []
      actions = []
