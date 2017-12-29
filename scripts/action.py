@@ -1,14 +1,11 @@
 import sys
 sys.path.append('..')
 
-#from env import SenseEnv
-#env = SenseEnv({'render':True,'debug':True,'obj_path':'../tests/data/pyramid.stl'})
-
 import sensenet
-from sensenet.envs.handroid.hand_env import HandEnv
-#env = HandEnv({'render':True})
-from sensenet.envs.handroid.index_finger_only_hand_env import IndexFingerOnlyHandEnv
-env = IndexFingerOnlyHandEnv({'render':True})
+if len(sys.argv) >= 2:
+  env_id = sys.argv[1]
+  print("loading env", env_id)
+env = sensenet.make(env_id,{'render':True})
 
 while (1):
   key = env.getKeyboardEvents()

@@ -33,20 +33,27 @@ step = 0
 episode = 0
 plan_step = 0
 winners = 0
-plans = [([left]*5),([right] * 5),([up] * 5),([down] * 5),([indexup] * 5),([indexdown] * 6),] + (["random"] * 6)
+plans = [([left]*5),([right] * 5),([up] * 5),([down] * 5),([indexup] * 5),([indexdown] * 5),] + (["random"] * 6)
 def random_plan():
   a = []
   for i in range(5):
     a.append(random.randint(0,7))
   return a      
 plan = None
+for ii in range(p.getNumJoints(env.agent)):
+  print("info",p.getJointInfo(env.agent,ii))
+
 while (1):
-   al, _ = p.getBasePositionAndOrientation(env.agent)
-   ol, _ = p.getBasePositionAndOrientation(env.obj_to_classify)
+   points = p.getClosestPoints(env.obj_to_classify,env.agent,10000000,-1,22)
+   al = points[0][7]
+   ol = points[0][6]
+   #al, _ = p.getBasePositionAndOrientation(env.agent)
+   #ol, _ = p.getBasePositionAndOrientation(env.obj_to_classify)
    xd = (al[0]-ol[0])/2
    yd = (al[1]-ol[1])/2
    zd = (al[2]-ol[2])/2
    #print("xd",xd,"yd",yd,"zd",zd)
+   #what the hell is 22?
 
    if env.is_touching() and plan_step == 0:
      plan = random.choice(plans)
@@ -64,7 +71,7 @@ while (1):
      action = plan[plan_step]
      plan_step += 1
    elif not env.is_touching():
-     if random.random() > 0.6 and zd >= xd:
+     if random.random() > 0.7 and zd >= xd:
      #elif random.random() > 0.3 and zd >= xd and zd >= yd:
        #print('z')
        action = down

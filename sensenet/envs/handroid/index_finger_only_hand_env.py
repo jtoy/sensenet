@@ -172,6 +172,11 @@ class IndexFingerOnlyHandEnv(HandEnv):
         red_dimension = img_arr[:,:,0].flatten()  #TODO change this so any RGB value returns 1, anything else is 0
         self.img_arr = img_arr     
         observation = (np.absolute(red_dimension - 255) > 0).astype(int)
+        new_obs = np.absolute(depths-1.0)
+        new_obs[new_obs > 0] =1
+        self.depths= depths
+        #self.current_observation = observation
+        self.current_observation = new_obs
         self.img_arr = img_arr
         self.depths= depths
         info = [42] #answer to life,TODO use real values
@@ -198,12 +203,6 @@ class IndexFingerOnlyHandEnv(HandEnv):
         reward -= distance
         reward += touch_reward
         self.prev_distance = distance
-        #print("shape",observation.shape)
-        if 'debug' in self.options and self.options['debug'] == True:
-            print("touch reward ",touch_reward)
-            print("action ",action)
-            print("reward ",reward)
-            print("distance ",distance)
         if self.steps >= max_steps or self.is_touching():
             done = True
-        return observation,reward,done,info
+        return self.current_observation,reward,done,info

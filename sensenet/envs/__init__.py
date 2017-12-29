@@ -15,10 +15,19 @@ register(
     reward_threshold=5000.0,
     )
 register(
+    id='IndexFingerOnlyHandEnv-v0',
+    entry_point='sensenet.envs.handroid:IndexFingerOnlyHandEnv',
+    max_episode_steps=1000,
+    reward_threshold=5000.0,
+    )
+register(
     id='BlankEnv-v0',
     entry_point='sensenet.envs.handroid:BlankEnv',
     )
-
+register(
+    id='SurviveEnv-v0',
+    entry_point='sensenet.envs.handroid:SurviveEnv',
+    )
 # if folder envs from current code exists, register it
 cwd = os.getcwd()
 if os.path.isdir(cwd+"/envs"):
