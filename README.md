@@ -13,7 +13,7 @@ you can run "pip install -r requirements.txt" to install all the python software
 pip install -e '.[all]'
 
 ### Install the fast way:
-pip install sensenet (NOT DONE)
+pip install sensenet
 
 ## Virtual images
 You can run all the code in a vagrant/virtualbox.  To use the image, install vagrant and virtualbox.  Then run:

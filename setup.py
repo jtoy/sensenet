@@ -6,6 +6,7 @@ from version import VERSION
 
 setup(name='sensenet',
       version=VERSION,
+      include_package_data=True,
       description='SenseNet',
       url='https://github.com/jtoy/sensenet',
       author='Jason Toy',
