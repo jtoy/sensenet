@@ -28,6 +28,7 @@ parser.add_argument('--model_path', type=str, help='path to store/retrieve model
 parser.add_argument('--data_path', type=str,default='./objects', help='path to training data')
 parser.add_argument('--name', type=str, help='name for logs/model')
 parser.add_argument('--mode', type=str, default="all", help='train/test/all model')
+parser.add_argument('--environment', type=str, default="HandEnv-v0")
 parser.add_argument('--num_episodes', type=int, default=1000, help='number of episodes')
 parser.add_argument('--max_steps', type=int, default=500, help='number of steps per episode')
 parser.add_argument('--obj_type', type=str, default="obj", help='obj or stl')
@@ -186,7 +187,7 @@ def finish_episode_learning(model, optimizer):
 # Training:
 
 #env = HandEnv(vars(args))
-env = sensenet.make("HandEnv-v0",vars(args))
+env = sensenet.make(args.environment,vars(args))
 print("action space: ",env.action_space(),env.action_space_n())
 print("class count: ",env.classification_n())
 model = Policy(env.observation_space(),env.action_space_n())
