@@ -315,18 +315,9 @@ class HandEnv(sensenet.SenseEnv):
         projectionMatrix = pb.computeProjectionMatrixFOV(fov,aspect,nearPlane,farPlane)
         w,h,img_arr,depths,mask = pb.getCameraImage(200,200, viewMatrix,projectionMatrix, lightDirection,lightColor,renderer=pb.ER_TINY_RENDERER)
         #w,h,img_arr,depths,mask = pb.getCameraImage(200,200, viewMatrix,projectionMatrix, lightDirection,lightColor,renderer=pb.ER_BULLET_HARDWARE_OPENGL)
-        #red_dimension = img_arr[:,:,0]  #TODO change this so any RGB value returns 1, anything else is 0
-        red_dimension = img_arr[:,:,0].flatten()  #TODO change this so any RGB value returns 1, anything else is 0
-        #observation = red_dimension
-        self.img_arr = img_arr
-        self.depths = depths
         new_obs = np.absolute(depths-1.0)
         new_obs[new_obs > 0] =1
-        self.depths= depths
-        observation = (np.absolute(red_dimension -255) > 0).astype(int)
-        #self.current_observation = observation
-        self.current_observation = new_obs
-        self.img_arr = img_arr
+        self.current_observation = new_obs.flatten()
         info = [42] #answer to life,TODO use real values
         pb.stepSimulation()
         self.steps +=1
@@ -350,7 +341,6 @@ class HandEnv(sensenet.SenseEnv):
         reward -= distance
         reward += touch_reward
         self.prev_distance = distance
-        #print("shape",observation.shape)
         if 'debug' in self.options and self.options['debug'] == True:
             print("touch reward ",touch_reward)
             print("action ",action)
@@ -358,28 +348,11 @@ class HandEnv(sensenet.SenseEnv):
             print("distance ",distance)
         if self.steps >= max_steps or self.is_touching():
             done = True
-        return observation,reward,done,info
+        return self.current_observation,reward,done,info
 
     def is_touching(self):
-        #this function probably shouldnt be here
-        #depth_f = self.depths.flatten()
-        #m = np.ma.masked_where(depth_f>=1.0, depth_f)
-        #red_dimension = self.img_arr[:,:,0].flatten()  #TODO change this so any RGB value returns 1, anything else is 0
-        #o = (np.ma.masked_where(np.ma.getmask(m), np.absolute(red_dimension -255) > 0)).astype(int)
-        #return (np.amax(o) > 0)
-        #if self.img_arr == None:
-        #  return False
-        #r = self.img_arr[:,:,0]
-        #g = self.img_arr[:,:,1]
-        #b = self.img_arr[:,:,2]
-        #return(np.max(g) == 0 and np.max(b) == 0 and np.max(r) > 0)
         points = pb.getContactPoints(self.agent,self.obj_to_classify)
         return len(points) > 0 and np.amax(self.current_observation > 0)
-        #print("g max", (np.max(g) == 0))
-        #print("b max", (np.max(b) == 0))
-        #print("r max", (np.max(r) == 0))
-        #print(np.max(r))
-        #print("wtf", np.amax(self.current_observation) > 0)
 
     def disconnect(self):
         pb.disconnect()
@@ -390,7 +363,6 @@ class HandEnv(sensenet.SenseEnv):
         self.load_object()
         self.load_agent()
         #return observation
-        self.img_arr = np.zeros(1080000).reshape(200,200,3,3,3)
         default = np.zeros((40000))
         self.steps = 0
         self.current_observation = default

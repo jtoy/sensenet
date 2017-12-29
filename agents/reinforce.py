@@ -277,7 +277,7 @@ if args.mode == "all" or args.mode == "train":
     if log_name:
       writer.add_scalar(log_name+"/reward",running_reward,total_steps)
       writer.add_scalar(log_name+"/touches",len(observed_touches),total_steps)
-      writer.add_scalar(log_name+"/average_activated_pixels",np.mean(average_activated_pixels),total_steps)
+      #writer.add_scalar(log_name+"/average_activated_pixels",np.mean(average_activated_pixels),total_steps)
     if i_episode % args.log_interval == 0:
       print('  Episode {}\tLast length: {:5d}\tAverage length: {:.2f}'.format(i_episode, step, running_reward))
     if running_reward > 5000: #env.spec.reward_threshold:

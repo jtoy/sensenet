@@ -215,16 +215,9 @@ class IndexFingerHandEnv(HandEnv):
         projectionMatrix = pb.computeProjectionMatrixFOV(fov,aspect,nearPlane,farPlane)
         w,h,img_arr,depths,mask = pb.getCameraImage(200,200, viewMatrix,projectionMatrix, lightDirection,lightColor,renderer=pb.ER_TINY_RENDERER)
         #w,h,img_arr,depths,mask = pb.getCameraImage(200,200, viewMatrix,projectionMatrix, lightDirection,lightColor,renderer=pb.ER_BULLET_HARDWARE_OPENGL)
-        #red_dimension = img_arr[:,:,0]  #TODO change this so any RGB value returns 1, anything else is 0
-        red_dimension = img_arr[:,:,0].flatten()  #TODO change this so any RGB value returns 1, anything else is 0
-        self.img_arr = img_arr     
-        self.depths = depths
         new_obs = np.absolute(depths-1.0)
         new_obs[new_obs > 0] =1
-        self.depths= depths
-        self.current_observation = new_obs
-        self.img_arr = img_arr
-        self.depths= depths
+        self.current_observation = new_obs.flatten()
         info = [42] #answer to life,TODO use real values
         pb.stepSimulation()
 
