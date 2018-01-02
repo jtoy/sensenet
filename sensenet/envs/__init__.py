@@ -25,6 +25,10 @@ register(
     entry_point='sensenet.envs.handroid:BlankEnv',
     )
 register(
+    id='TouchWandEnv-v0',
+    entry_point='sensenet.envs.handroid:TouchWandEnv',
+    )
+register(
     id='SurviveEnv-v0',
     entry_point='sensenet.envs.handroid:SurviveEnv',
     )

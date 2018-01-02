@@ -6,7 +6,7 @@ if len(sys.argv) >= 2:
   env_id = sys.argv[1]
   print("loading env", env_id)
 env = sensenet.make(env_id,{'render':True})
-
+env.reset()
 while (1):
   key = env.getKeyboardEvents()
   n = -1

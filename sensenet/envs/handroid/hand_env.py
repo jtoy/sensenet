@@ -352,7 +352,7 @@ class HandEnv(sensenet.SenseEnv):
 
     def is_touching(self):
         points = pb.getContactPoints(self.agent,self.obj_to_classify)
-        return len(points) > 0 and np.amax(self.current_observation > 0)
+        return len(points) > 0 and np.amax(self.current_observation) > 0
 
     def disconnect(self):
         pb.disconnect()
