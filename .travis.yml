@@ -1,5 +1,6 @@
 sudo: required
 language: python
+group: deprecated-2017Q4
 python:
   - 3.6
 services:
