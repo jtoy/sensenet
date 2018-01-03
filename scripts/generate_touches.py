@@ -26,15 +26,19 @@ def save_data(env,label,touches,actions):
   np.save(path+"/touches",touches)
   np.save(path+"/actions",actions)
 
-#TODO add support for folders,classes, and saving data
 parser = argparse.ArgumentParser()
 parser.add_argument('--render', action='store_true', help='render the environment')
 parser.add_argument('--environment', type=str, default="HandEnv-v0")
 parser.add_argument('--epochs', type=int, default=1)
 parser.add_argument('--folder', type=str)
+parser.add_argument('--file', type=str)
 parser.add_argument('--fast_exit', type=int, default=0)
 args = parser.parse_args()
-for filename in glob.iglob(args.folder+"/**/*.obj", recursive=True):
+if args.folder:
+  files = glob.iglob(args.folder+"/**/*.obj", recursive=True)
+else:
+  files = [args.file]
+for filename in files:
   label = int(filename.split("/")[-3].split("_")[0])
   print(filename)
   print(label)
@@ -48,6 +52,7 @@ for filename in glob.iglob(args.folder+"/**/*.obj", recursive=True):
   step = 0
   episode = 0
   plan_step = 0
+  tries = 0
   winners = 0
   for epoch in range(args.epochs):
     env.reset()
@@ -113,6 +118,11 @@ for filename in glob.iglob(args.folder+"/**/*.obj", recursive=True):
         if len(observations) > 2:
           #training_sets.append([observations,actions])
           save_data(env,label,observations,actions)
+        else:
+          tries +=1
+          if tries > 5:
+            print("couldnt get trainig data for item",filename)
+            break
         observations = []
         actions = []
         step = 0
@@ -121,6 +131,6 @@ for filename in glob.iglob(args.folder+"/**/*.obj", recursive=True):
         env.reset()
       if args.fast_exit != 0 and episode >= args.fast_exit:
           sys.exit()
-      if step % 10 == 0:
-        print("episode",episode,"step", step,"plan", plan,"plan_step",plan_step,"touch_count",touch_count,"winners",winners)
+      if step % 20 == 0:
+        print("episode",episode,"label",label,"step", step,"plan", plan,"plan_step",plan_step,"touch_count",touch_count,"winners",winners)
       step +=1
