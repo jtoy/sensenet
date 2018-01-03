@@ -32,7 +32,7 @@ parser.add_argument('--render', action='store_true', help='render the environmen
 parser.add_argument('--environment', type=str, default="HandEnv-v0")
 parser.add_argument('--epochs', type=int, default=1)
 parser.add_argument('--folder', type=str)
-parser.add_argument('--fast_exit', type=int, default=5)
+parser.add_argument('--fast_exit', type=int, default=0)
 args = parser.parse_args()
 for filename in glob.iglob(args.folder+"/**/*.obj", recursive=True):
   label = int(filename.split("/")[-3].split("_")[0])

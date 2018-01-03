@@ -168,16 +168,8 @@ train_loader = torch.utils.data.DataLoader(dataset=train_dataset, batch_size=bat
 total_step = len(train_loader)
 for epoch in range(10):
   print('epoch=%d -------------------------'%(epoch))
-  for i, data in enumerate(train_loader):
-    #print("data",data)
-    touches = data[0] #.reshape(200,200)
-    #print("touch size",touches.size())
+  for i, (touches,label) in enumerate(train_loader):
     touches = touches.squeeze(0).float()
-    #print("aftertouch size",touches.size())
-
-    label = data[1]
-    #print("labelll",label)
-    #print(label)
     touches = Variable(touches)
     label = Variable(label)
     optimizer.zero_grad()
