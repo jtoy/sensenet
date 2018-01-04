@@ -32,7 +32,7 @@ class HandEnv(sensenet.SenseEnv):
             pb.connect(pb.GUI)
         else:
             pb.connect(pb.DIRECT)
-        pb.setGravity(0,0,0)
+        pb.setGravity(0,0,-10)
         pb.setRealTimeSimulation(0)
         self.move = 0.05 # 0.01
         self.load_object()
@@ -62,8 +62,8 @@ class HandEnv(sensenet.SenseEnv):
         if 'obj_path' not in self.options or ('obj_path' in self.options and self.options['obj_path'] == None):
             path = self.get_data_path()
             if path == None:
-                dir_path = os.path.dirname(os.path.realpath(__file__))                
-                stlfile = dir_path + "/data/pyramid.stl"                
+                dir_path = os.path.dirname(os.path.realpath(__file__))
+                stlfile = dir_path + "/data/pyramid.stl"
             else:
                 files = glob.glob(path+"/**/*."+obj_type,recursive=True)
                 try:
@@ -73,7 +73,7 @@ class HandEnv(sensenet.SenseEnv):
                                     % (obj_type, path))
                 #TODO copy this file to some tmp area where we can guarantee writing
                 if os.name == 'nt':
-                    self.class_label = int(stlfile.split("\\")[-3].split("_")[0])    
+                    self.class_label = int(stlfile.split("\\")[-3].split("_")[0])
                 elif os.name == 'posix' or os.name == 'mac':
                     self.class_label = int(stlfile.split("/")[-3].split("_")[0])
                 #class labels are folder names,must be integer or N_text
@@ -217,27 +217,27 @@ class HandEnv(sensenet.SenseEnv):
         fov = 50  #10 or 50
         hand_po = pb.getBasePositionAndOrientation(self.agent)
         ho = pb.getQuaternionFromEuler([0.0, 0.0, 0.0])
-        
+
         # So when trying to modify the physics of the engine, we run into some problems. If we leave
         # angular damping at default (0.04) then the hand rotates when moving up and dow, due to torque.
-        # If we set angularDamping to 100.0 then the hand will bounce off into the background due to 
+        # If we set angularDamping to 100.0 then the hand will bounce off into the background due to
         # all the stored energy, when it makes contact with the object. The below set of parameters seem
         # to have a reasonably consistent performance in keeping the hand level and not inducing unwanted
-        # behavior during contact. 
+        # behavior during contact.
         pb.changeDynamics(self.agent, linkIndex=-1, spinningFriction=100.0, angularDamping=35.0,
                 contactStiffness=0.0, contactDamping=100)
-       
+
         if action == 65298 or action == 0: #down
             pb.changeConstraint(self.hand_cid,(hand_po[0][0]+self.move,hand_po[0][1],hand_po[0][2]),ho, maxForce=50)
-        elif action == 65297 or action == 1: #up            
+        elif action == 65297 or action == 1: #up
             pb.changeConstraint(self.hand_cid,(hand_po[0][0]-self.move,hand_po[0][1],hand_po[0][2]),ho, maxForce=50)
-        elif action == 65295 or action == 2: #left            
+        elif action == 65295 or action == 2: #left
             pb.changeConstraint(self.hand_cid,(hand_po[0][0],hand_po[0][1]+self.move,hand_po[0][2]),ho, maxForce=50)
-        elif action== 65296 or action == 3: #right            
+        elif action== 65296 or action == 3: #right
             pb.changeConstraint(self.hand_cid,(hand_po[0][0],hand_po[0][1]-self.move,hand_po[0][2]),ho, maxForce=50)
-        elif action == 44 or action == 4: #<        
-            pb.changeConstraint(self.hand_cid,(hand_po[0][0],hand_po[0][1],hand_po[0][2]+self.move), ho, maxForce=50)            
-        elif action == 46 or action == 5: #>            
+        elif action == 44 or action == 4: #<
+            pb.changeConstraint(self.hand_cid,(hand_po[0][0],hand_po[0][1],hand_po[0][2]+self.move), ho, maxForce=50)
+        elif action == 46 or action == 5: #>
             pb.changeConstraint(self.hand_cid,(hand_po[0][0],hand_po[0][1],hand_po[0][2]-self.move), ho, maxForce=50)
         elif action >= 6 and action <= 7:
             # keeps the hand from moving towards origin
@@ -250,16 +250,16 @@ class HandEnv(sensenet.SenseEnv):
             self.indexId = 2
             self.thumbId = 3
             self.ring_id = 4
-            
+
             pink = convertSensor(self.pinkId) #pinkId != indexId -> return random uniform
             middle = convertSensor(self.middleId) # middleId != indexId -> return random uniform
-            
+
             thumb = convertSensor(self.thumbId) # thumbId != indexId -> return random uniform
             ring = convertSensor(self.ring_id) # ring_id != indexId -> return random uniform
             """
-            index = convertAction(action) # action = 6 or 25 due to kludge -> return -1 or 1                        
+            index = convertAction(action) # action = 6 or 25 due to kludge -> return -1 or 1
             """
-            pb.setJointMotorControl2(self.agent,7,pb.POSITION_CONTROL,self.pi/4.) 
+            pb.setJointMotorControl2(self.agent,7,pb.POSITION_CONTROL,self.pi/4.)
             pb.setJointMotorControl2(self.agent,9,pb.POSITION_CONTROL,thumb+self.pi/10)
             pb.setJointMotorControl2(self.agent,11,pb.POSITION_CONTROL,thumb)
             pb.setJointMotorControl2(self.agent,13,pb.POSITION_CONTROL,thumb)
@@ -274,7 +274,7 @@ class HandEnv(sensenet.SenseEnv):
             newJoint17Pos = joint17Pos + index*finger_jump
             newJoint19Pos = joint19Pos + index*finger_jump
             newJoint21Pos = joint21Pos + index*finger_jump
-            
+
             # following values found by experimentation
             if newJoint17Pos <= -0.7:
                 newJoint17Pos = -0.7
@@ -283,7 +283,7 @@ class HandEnv(sensenet.SenseEnv):
             if newJoint19Pos <= 0.13:
                 newJoint19Pos = 0.13
             elif newJoint19Pos >= 0.42:
-                newJoint19Pos = 0.42            
+                newJoint19Pos = 0.42
             if newJoint21Pos <= -0.8:
                 newJoint21Pos = -0.8
             elif newJoint21Pos >= 0.58:
@@ -296,7 +296,7 @@ class HandEnv(sensenet.SenseEnv):
             pb.setJointMotorControl2(self.agent,17,pb.POSITION_CONTROL,index)
             pb.setJointMotorControl2(self.agent,19,pb.POSITION_CONTROL,index)
             pb.setJointMotorControl2(self.agent,21,pb.POSITION_CONTROL,index)
-            
+
             pb.setJointMotorControl2(self.agent,24,pb.POSITION_CONTROL,middle)
             pb.setJointMotorControl2(self.agent,26,pb.POSITION_CONTROL,middle)
             pb.setJointMotorControl2(self.agent,28,pb.POSITION_CONTROL,middle)
@@ -356,9 +356,11 @@ class HandEnv(sensenet.SenseEnv):
 
     def disconnect(self):
         pb.disconnect()
-    def _reset(self):
+    def _reset(self,options={}):
         # load a new object to classify
         # move hand to 0,0,0
+        if bool(options):
+            self.options = options #for reloading a specific shape
         pb.resetSimulation()
         self.load_object()
         self.load_agent()

@@ -35,15 +35,17 @@ parser.add_argument('--file', type=str)
 parser.add_argument('--fast_exit', type=int, default=0)
 args = parser.parse_args()
 if args.folder:
-  files = glob.iglob(args.folder+"/**/*.obj", recursive=True)
+  files = list(glob.iglob(args.folder+"/**/*.obj", recursive=True))
 else:
   files = [args.file]
+random.shuffle(files)
+env = sensenet.make(args.environment,{'render':args.render})
 for filename in files:
   label = int(filename.split("/")[-3].split("_")[0])
   print(filename)
   print(label)
   path = "touch_data/"+str(label)+"/"
-  env = sensenet.make(args.environment,{'render':args.render,'obj_path':filename})
+  env._reset({'obj_path':filename})
   env.mkdir_p(path)
   training_sets = []
   observations = []
@@ -62,9 +64,9 @@ for filename in files:
       ol = points[0][6]
       #al, _ = p.getBasePositionAndOrientation(env.agent)
       #ol, _ = p.getBasePositionAndOrientation(env.obj_to_classify)
-      xd = (al[0]-ol[0])/2
-      yd = (al[1]-ol[1])/2
-      zd = (al[2]-ol[2])/2
+      xd = abs(al[0]-ol[0])/2
+      yd = abs(al[1]-ol[1])/2
+      zd = abs(al[2]-ol[2])/2
       #print("xd",xd,"yd",yd,"zd",zd)
       #what the hell is 22?
 
@@ -84,18 +86,30 @@ for filename in files:
         action = plan[plan_step]
         plan_step += 1
       elif not env.is_touching():
-        if random.random() > 0.7 and zd >= xd:
+        #if zd >= xd:
+        if random.random() > 0.5 and zd >= xd:
+
           action = down
-        elif random.random() > 0.4 and xd >= yd:
-          action = left
-        elif random.random() > 0.3 and yd >= xd:
+          #print("zd")
+        #elif xd >= yd:
+        elif random.random() > 0.5 and xd >= yd:
+
           action = forward
+          #print("xd")
+
+        #elif yd >= xd:
+        elif random.random() > 0.5 and yd >= xd:
+          #print("yd")
+          action = left
+          #action = right
         else:
           action = random.choice(action_choices)
 
       observation,reward,done,info = env.step(action)
 
       if env.is_touching():
+        print("touch")
+
         observations.append(observation.reshape(200,200))
         actions.append(action)
         touch_count += 1
