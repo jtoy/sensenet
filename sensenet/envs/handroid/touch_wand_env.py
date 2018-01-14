@@ -9,8 +9,6 @@ from sensenet.utils import mkdir_p
 from sensenet.envs.handroid.hand_env import HandEnv
 
 class TouchWandEnv(HandEnv):
-#class TouchWandEnv(sensenet.SenseEnv):
-
     def __init__(self,options={}):
         self.options = options
         self.steps = 0
@@ -29,7 +27,9 @@ class TouchWandEnv(HandEnv):
         self.max_steps = 1000
 
     def load_agent(self):
-        xyz=[0,-1.25,0]
+        obj = pb.getBasePositionAndOrientation(self.obj_to_classify)
+        target = obj[0]
+        xyz=[target[0] - 1.25, target[1],target[2]]
         orientation = [0,1,0,1]
         self.agent = pb.createCollisionShape(pb.GEOM_BOX,
                                              halfExtents=[self.wandSide,
@@ -44,8 +44,6 @@ class TouchWandEnv(HandEnv):
         self.agent_cid = pb.createConstraint(self.agent,-1,-1,-1,pb.JOINT_FIXED,
                                              [0,0,0],[0,0,0],xyz,
                                              childFrameOrientation=orientation)
-
-        #self.fov = pb.addUserDebugParameter('fov', 0, 180, 50)
         self.fov = 45
     def observation_space(self):
         #TODO return Box/Discrete
@@ -60,16 +58,15 @@ class TouchWandEnv(HandEnv):
         return len(self.action_space())
 
     def ahead_view(self):
-        
         link_state = pb.getBasePositionAndOrientation(self.agent)
         link_p = link_state[0]
         link_o = link_state[1]
         handmat = pb.getMatrixFromQuaternion(link_o)
-        """
+
         axisX = [handmat[0],handmat[3],handmat[6]]
         axisY = [-handmat[1],-handmat[4],-handmat[7]] # Negative Y axis
         axisZ = [handmat[2],handmat[5],handmat[8]]
-        """
+
         # we define the up axis in terms of the object to classify since it is
         # stationary. If you define up in terms of the orientation of the wand
         # then your up axis can rotate as the wand rotates due to the normal
@@ -83,6 +80,7 @@ class TouchWandEnv(HandEnv):
         state_o = state[1]
         mat = pb.getMatrixFromQuaternion(state_o)
         axisZ2 = [mat[2], mat[5], mat[8]]
+        axisX2 = [mat[0],mat[3],mat[6]]
         eyeOffset = self.wandLength
         focusOffset = eyeOffset + 0.0000001
 
@@ -91,19 +89,18 @@ class TouchWandEnv(HandEnv):
 
         up = axisZ2 # Up is Z axis of obj_to_classify - change to axisZ to use
         # the wand orientation as up
-        viewMatrix = pb.computeViewMatrix(self.eye_pos,self.target_pos,up)
+        viewMatrix = pb.computeViewMatrix(self.eye_pos, self.target_pos, up)
 
         if 'render' in self.options and self.options['render'] == True:
             #pb.addUserDebugLine(link_p,[link_p[0]-35.1,link_p[1]+3.1*axisY[1],link_p[2]+0.1*axisY[2]],[1,0,0],2,0.2)
             #pb.addUserDebugLine(link_p,[link_p[0]+0.1*axisY[0],link_p[1]+3.1*axisY[1],link_p[2]+0.1*axisY[2]],[1,0,0],2,0.2)
-#            pb.addUserDebugLine(link_p,[link_p[0]+0.1*axisY[0],link_p[1]+0.1*axisY[1],link_p[2]+0.1*axisY[2]],[1,0,0],2,0.2)
+            #pb.addUserDebugLine(link_p,[link_p[0]+0.1*axisY[0],link_p[1]+0.1*axisY[1],link_p[2]+0.1*axisY[2]],[1,0,0],2,0.2)
             pass
 
         return viewMatrix
 
     def _step(self,action):
         done = False
-
         aspect = 1
         camTargetPos = [0,0,0]
         yaw = 40
@@ -117,13 +114,11 @@ class TouchWandEnv(HandEnv):
         farPlane = 0.022
         lightDirection = [0,1,0]
         lightColor = [1,1,1]#optional
-        #fov = pb.readUserDebugParameter(self.fov)#90#50#90#50  #10 or 50
         agent_po = pb.getBasePositionAndOrientation(self.agent_mb)
         x = agent_po[0][0]
         y = agent_po[0][1]
         z = agent_po[0][2]
 
-        #print("xyz",x,y,z)
         if action == 0: #down
           x += self.move
         elif action == 1: #up
@@ -138,25 +133,32 @@ class TouchWandEnv(HandEnv):
           z -= self.move
         pivot = [x,y,z]
         orn = pb.getQuaternionFromEuler([0,0,0])
-        pb.changeConstraint(self.agent_cid,pivot,jointChildFrameOrientation=[0,1,0,1],maxForce=0.1)
+        pb.changeConstraint(self.agent_cid,pivot,
+                            jointChildFrameOrientation=[0,1,0,1],
+                            maxForce=0.1)
         points = pb.getContactPoints(self.agent,self.obj_to_classify)
         if len(points) > 0:
             viewMatrix = self.ahead_view()
-            projectionMatrix = pb.computeProjectionMatrixFOV(self.fov,aspect,nearPlane,farPlane)
+            projectionMatrix = pb.computeProjectionMatrixFOV(self.fov,aspect,
+                                                    nearPlane,farPlane)
+
             cameraImageHeight = int((2 * 0.851 * self.wandSide)*11800)
-            w,h,img_arr,depths,mask = pb.getCameraImage(cameraImageHeight,cameraImageHeight,
-                                                        viewMatrix,projectionMatrix,
-                                                        lightDirection,lightColor,
-                                                        renderer=pb.ER_TINY_RENDERER)
-            new_obs = np.absolute(depths-1.0)
-            new_obs[new_obs > 0] =1
+            w,h,img_arr,depths,mask = pb.getCameraImage(cameraImageHeight,
+                                                    cameraImageHeight,
+                                                    viewMatrix,
+                                                    projectionMatrix,
+                                                    lightDirection,
+                                                    lightColor,
+                                                    renderer=pb.ER_TINY_RENDERER)
+            new_obs = np.absolute(depths - 1.0)
+            new_obs[new_obs > 0] = 1
             self.current_observation = new_obs.flatten()
         else:
             self.current_observation = np.zeros((self.observation_space()))
 
         info = [42] #answer to life,TODO use real values
         pb.stepSimulation()
-        self.steps +=1
+        self.steps += 1
         #reward if moving towards the object or touching the object
         reward = 0
 
@@ -165,7 +167,7 @@ class TouchWandEnv(HandEnv):
         else:
             touch_reward = 0
         #obj_po = pb.getBasePositionAndOrientation(self.obj_to_classify)
-        #distance = math.sqrt(sum([(xi-yi)**2 for xi,yi in zip(obj_po[0],agent_po[0])])) #TODO faster euclidean
+        #di,mmmstance = math.sqrt(sum([(xi-yi)**2 for xi,yi in zip(obj_po[0],agent_po[0])])) #TODO faster euclidean
         #distance =  np.linalg.norm(obj_po[0],hand_po[0])
         distance = 999
         #print("distance:",distance)
@@ -188,8 +190,8 @@ class TouchWandEnv(HandEnv):
         # load a new object to classify
         # move hand to 0,0,0
         pb.resetSimulation()
-        self.load_agent()
         self.load_object()
+        self.load_agent()
         default = np.zeros((self.observation_space()))
         self.steps = 0
         self.current_observation = default
