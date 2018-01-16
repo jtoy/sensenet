@@ -5,7 +5,6 @@ import random,glob,math
 from shutil import copyfile
 import sensenet
 from sensenet.error import Error
-from sensenet.utils import mkdir_p
 
 class BlankEnv(sensenet.SenseEnv):
     def getKeyboardEvents(self):

@@ -28,7 +28,7 @@ def save_data(env,label,touches,actions):
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--render', action='store_true', help='render the environment')
-parser.add_argument('--environment', type=str, default="HandEnv-v0")
+parser.add_argument('--environment',"-e", type=str, default="HandEnv-v0")
 parser.add_argument('--epochs', type=int, default=1)
 parser.add_argument('--folder', type=str)
 parser.add_argument('--file', type=str)
@@ -59,7 +59,8 @@ for filename in files:
   for epoch in range(args.epochs):
     env.reset()
     while(1):
-      points = p.getClosestPoints(env.obj_to_classify,env.agent,10000000,-1,22)
+      points = p.getClosestPoints(env.obj_to_classify,env.agent,10000000,-1,-1)
+      #points = p.getClosestPoints(env.obj_to_classify,env.agent,10000000,-1,22)
       al = points[0][7]
       ol = points[0][6]
       #al, _ = p.getBasePositionAndOrientation(env.agent)
