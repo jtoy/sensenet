@@ -190,9 +190,12 @@ class TouchWandEnv(HandEnv):
         points = pb.getContactPoints(self.agent,self.obj_to_classify)
         return len(points) > 0 and np.amax(self.current_observation) > 0
 
-    def _reset(self):
+    def _reset(self,options={}):
         # load a new object to classify
         # move hand to 0,0,0
+        if bool(options):
+            self.options = options #for reloading a specific shape
+        pb.resetSimulation()
         pb.resetSimulation()
         self.load_object()
         self.load_agent()
