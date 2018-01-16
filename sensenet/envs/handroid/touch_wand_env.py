@@ -25,11 +25,14 @@ class TouchWandEnv(HandEnv):
         self.wandLength = 0.5
         self.wandSide = 0.005
         self.max_steps = 1000
+        #self.load_object()
+        #self.load_agent()
 
     def load_agent(self):
         obj = pb.getBasePositionAndOrientation(self.obj_to_classify)
         target = obj[0]
-        xyz=[target[0] - 1.25, target[1],target[2]]
+        xyz=[target[0] - 1.25, target[1], target[2]]
+        #xyz=[0,-1.25,0]
         orientation = [0,1,0,1]
         self.agent = pb.createCollisionShape(pb.GEOM_BOX,
                                              halfExtents=[self.wandSide,
@@ -41,7 +44,7 @@ class TouchWandEnv(HandEnv):
 
         pb.changeVisualShape(self.agent,-1,rgbaColor=[1,1,0,1])
 
-        self.agent_cid = pb.createConstraint(self.agent,-1,-1,-1,pb.JOINT_FIXED,
+        self.agent_cid = pb.createConstraint(self.agent_mb,-1,-1,-1,pb.JOINT_FIXED,
                                              [0,0,0],[0,0,0],xyz,
                                              childFrameOrientation=orientation)
         self.fov = 45
@@ -58,7 +61,7 @@ class TouchWandEnv(HandEnv):
         return len(self.action_space())
 
     def ahead_view(self):
-        link_state = pb.getBasePositionAndOrientation(self.agent)
+        link_state = pb.getBasePositionAndOrientation(self.agent_mb)
         link_p = link_state[0]
         link_o = link_state[1]
         handmat = pb.getMatrixFromQuaternion(link_o)
@@ -132,11 +135,12 @@ class TouchWandEnv(HandEnv):
         elif action == 5: #>
           z -= self.move
         pivot = [x,y,z]
+
         orn = pb.getQuaternionFromEuler([0,0,0])
         pb.changeConstraint(self.agent_cid,pivot,
                             jointChildFrameOrientation=[0,1,0,1],
                             maxForce=0.1)
-        points = pb.getContactPoints(self.agent,self.obj_to_classify)
+        points = pb.getContactPoints(self.agent_mb, self.obj_to_classify)
         if len(points) > 0:
             viewMatrix = self.ahead_view()
             projectionMatrix = pb.computeProjectionMatrixFOV(self.fov,aspect,
@@ -158,6 +162,7 @@ class TouchWandEnv(HandEnv):
 
         info = [42] #answer to life,TODO use real values
         pb.stepSimulation()
+
         self.steps += 1
         #reward if moving towards the object or touching the object
         reward = 0
