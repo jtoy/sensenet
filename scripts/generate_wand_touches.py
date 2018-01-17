@@ -33,7 +33,7 @@ def save_data(env,label,touches,actions):
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--render', action='store_true', help='render the environment')
-parser.add_argument('--environment',"-e", type=str, default="HandEnv-v0")
+parser.add_argument('--environment',"-e", type=str, default="TouchWandEnv-v0")
 parser.add_argument('--epochs', type=int, default=1)
 parser.add_argument('--folder', type=str)
 parser.add_argument('--file', type=str)
@@ -61,6 +61,7 @@ for filename in files:
   plan_step = 0
   tries = 0
   winners = 0
+  past_observation = []
   for epoch in range(args.epochs):
     env.reset()
     while(1):
@@ -112,11 +113,12 @@ for filename in files:
           action = random.choice(action_choices)
 
       observation,reward,done,info = env.step(action)
-
       if env.is_touching():
-        print("touch")
+        #print("touch")
+        print(np.array_equal(observation,past_observation))
+        past_observation = observation
 
-        observations.append(observation.reshape(200,200))
+        observations.append(observation.reshape(100,100))
         actions.append(action)
         touch_count += 1
         #print("is touching")
@@ -132,7 +134,7 @@ for filename in files:
         episode +=1
         plan_step = 0
         env.reset()
-      elif step >= 1000:
+      elif step >= 10000:
         print("closing episode,touch_count",touch_count)
         touch_count = 0
         if len(observations) > 2:

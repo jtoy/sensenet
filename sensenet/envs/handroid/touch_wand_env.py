@@ -19,7 +19,7 @@ class TouchWandEnv(HandEnv):
             pb.connect(pb.DIRECT)
         pb.setGravity(0,0,-0.001)
         pb.setRealTimeSimulation(0)
-        self.move = 0.0001 # 0.01
+        self.move = 0.01 # 0.01
         self.prev_distance = 10000000
         self.wandLength = 0.5
         self.wandSide = 0.005
@@ -138,7 +138,7 @@ class TouchWandEnv(HandEnv):
         orn = pb.getQuaternionFromEuler([0,0,0])
         pb.changeConstraint(self.agent_cid,pivot,
                             jointChildFrameOrientation=[0,1,0,1],
-                            maxForce=0.1)
+                            maxForce=0.01)
         points = pb.getContactPoints(self.agent_mb, self.obj_to_classify)
         if len(points) > 0:
             viewMatrix = self.ahead_view()
@@ -187,7 +187,7 @@ class TouchWandEnv(HandEnv):
         return self.current_observation,reward,done,info
 
     def is_touching(self):
-        points = pb.getContactPoints(self.agent,self.obj_to_classify)
+        points = pb.getContactPoints(self.agent_mb,self.obj_to_classify)
         return len(points) > 0 and np.amax(self.current_observation) > 0
 
     def _reset(self,options={}):
