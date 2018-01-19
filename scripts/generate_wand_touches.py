@@ -115,7 +115,7 @@ for filename in files:
       observation,reward,done,info = env.step(action)
       if env.is_touching():
         #print("touch")
-        print(np.array_equal(observation,past_observation))
+        #print(np.array_equal(observation,past_observation))
         past_observation = observation
 
         observations.append(observation.reshape(100,100))
