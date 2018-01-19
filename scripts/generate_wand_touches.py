@@ -134,7 +134,7 @@ for filename in files:
         episode +=1
         plan_step = 0
         env.reset()
-      elif step >= 10000:
+      elif step >= 400:
         print("closing episode,touch_count",touch_count)
         touch_count = 0
         if len(observations) > 2:
