@@ -45,6 +45,8 @@ else:
   files = [args.file]
 random.shuffle(files)
 env = sensenet.make(args.environment,{'render':args.render})
+episode = 0
+winners = 0
 for filename in files:
   label = int(filename.split("/")[-3].split("_")[0])
   print(filename)
@@ -57,20 +59,15 @@ for filename in files:
   actions = []
   touch_count = 0
   step = 0
-  episode = 0
   plan_step = 0
   tries = 0
-  winners = 0
   past_observation = []
   for epoch in range(args.epochs):
     env.reset()
     while(1):
       points = p.getClosestPoints(env.obj_to_classify,env.agent_mb,10000000,-1,-1)
-      #points = p.getClosestPoints(env.obj_to_classify,env.agent,10000000,-1,22)
       al = points[0][7]
       ol = points[0][6]
-      #al, _ = p.getBasePositionAndOrientation(env.agent)
-      #ol, _ = p.getBasePositionAndOrientation(env.obj_to_classify)
       xd = abs(al[0]-ol[0])/2
       yd = abs(al[1]-ol[1])/2
       zd = abs(al[2]-ol[2])/2
@@ -134,6 +131,7 @@ for filename in files:
         episode +=1
         plan_step = 0
         env.reset()
+        break
       elif step >= 400:
         print("closing episode,touch_count",touch_count)
         touch_count = 0
