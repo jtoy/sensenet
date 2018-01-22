@@ -1,3 +1,5 @@
+import sys
+sys.path.append('..')
 import sensenet
 
 import torch
@@ -162,10 +164,14 @@ def select_action(state,n_actions,epsilon=0.2):
   else:
     state = torch.from_numpy(state).float().unsqueeze(0)
     probs = model(Variable(state))
-    action = probs.multinomial()
+    #action = probs.multinomial()
+    #model.saved_actions.append(action)
+    #return action.data[0][0]
+    m = Categorical(probs)
+    action = m.sample()
     #model.saved_actions.append(SavedAction(action, state_value))
-    model.saved_actions.append(action)
-    return action.data[0][0]
+    policy.saved_log_probs.append(m.log_proc(action))
+    return action.data[0]
 
 def finish_episode_learning(model, optimizer):
   R = 0
@@ -253,6 +259,7 @@ if args.mode == "all" or args.mode == "train":
         observed_touches = observed_touches.cuda()
         label = label.cuda()
       observed_touches = Variable(observed_touches)
+      print(observed_touches.size())
       label = Variable(label)
 
       # Classifier is learning:
