@@ -2,14 +2,16 @@ import sys, argparse
 sys.path.append('..')
 #from env import SenseEnv
 import sensenet
-from sensenet.envs.handroid.hand_env import HandEnv
+from sensenet.envs.handroid.touch_wand_env import TouchWandEnv
 import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
-from tensorboardX import SummaryWriter
+
+from collections import Counter
+#from tensorboardX import SummaryWriter
 
 
-writer = SummaryWriter()
+#writer = SummaryWriter()
 # Deep Q Network off-policy
 # got from https://github.com/MorvanZhou/Reinforcement-learning-with-tensorflow/blob/master/contents/6_OpenAI_gym/RL_brain.py
 class DeepQNetwork:
@@ -177,9 +179,9 @@ class DeepQNetwork:
         plt.xlabel('training steps')
         plt.show()
 
-# straight from the TF example, modified to work with 6 classes istead of 10
+# straight from the TF example, modified to work with 12 classes istead of 10
 def cnn_model_fn(features, labels, mode):
-    input_layer = tf.reshape(features["x"], [-1, 200, 200, 1])
+    input_layer = tf.reshape(features["x"], [-1, 100, 100, 1])
     conv1 = tf.layers.conv2d(inputs=input_layer,
                 filters=32,
                 kernel_size=[5, 5],
@@ -195,13 +197,13 @@ def cnn_model_fn(features, labels, mode):
                 activation=tf.nn.relu)
     pool2 = tf.layers.max_pooling2d(inputs=conv2, pool_size=[2, 2], strides=2)
 
-    pool2_flat = tf.reshape(pool2, [-1, 50 * 50 * 64])
+    pool2_flat = tf.reshape(pool2, [-1, 25 * 25 * 64])
     dense = tf.layers.dense(inputs=pool2_flat, units=128, activation=tf.nn.relu)
 
-    dropout = tf.layers.dropout(inputs=dense, rate=0.4, 
+    dropout = tf.layers.dropout(inputs=dense, rate=0.4,
                     training=mode == tf.estimator.ModeKeys.TRAIN)
 
-    logits = tf.layers.dense(inputs=dropout, units=6)
+    logits = tf.layers.dense(inputs=dropout, units=12)
 
     predictions = {
         # Generate predictions (for PREDICT and EVAL mode)
@@ -211,8 +213,8 @@ def cnn_model_fn(features, labels, mode):
 
     if mode == tf.estimator.ModeKeys.PREDICT:
         return tf.estimator.EstimatorSpec(mode=mode, predictions=predictions)
-  
-    onehot_labels = tf.one_hot(indices=tf.cast(labels, tf.int32), depth=6)
+
+    onehot_labels = tf.one_hot(indices=tf.cast(labels, tf.int32), depth=12)
 
     loss = tf.losses.softmax_cross_entropy(onehot_labels=onehot_labels, logits=logits)
 
@@ -222,38 +224,38 @@ def cnn_model_fn(features, labels, mode):
         return tf.estimator.EstimatorSpec(mode=mode, loss=loss, train_op=train_op)
 
     eval_metric_ops = { "accuracy": tf.metrics.accuracy(labels=labels, predictions=predictions["classes"])}
-  
+
     return tf.estimator.EstimatorSpec(mode=mode, loss=loss, eval_metric_ops=eval_metric_ops)
 
 
 if __name__ == "__main__":
-  
+
     parser = argparse.ArgumentParser(description='SenseNet actor-critic example')
     parser.add_argument('--gamma', type=float, default=0.99, metavar='G', help='discount factor (default: 0.99)')
     parser.add_argument('--epsilon', type=float, default=0.6, metavar='G', help='epsilon value for random action (default: 0.6)')
     parser.add_argument('--seed', type=int, default=42, metavar='N', help='random seed (default: 42)')
     parser.add_argument('--batch_size', type=int, default=42, metavar='N', help='batch size (default: 42)')
-    parser.add_argument('--log-interval', type=int, default=10, metavar='N', help='interval between training status logs (default: 10)') 
+    parser.add_argument('--log-interval', type=int, default=10, metavar='N', help='interval between training status logs (default: 10)')
     parser.add_argument('--render', action='store_true', help='render the environment')
     parser.add_argument('--gpu', action='store_true', help='use GPU')
     parser.add_argument('--log', type=str, help='log experiment to tensorboard')
     parser.add_argument('--model_path', type=str, help='path to store/retrieve model at')
     parser.add_argument('--mode', type=str, default="train", help='train/test/all model')
     parser.add_argument('--data_path', type=str, default="../../touchable_data/objects/")
-      
+
     args = parser.parse_args()
 
     #env = SenseEnv(vars(args))
-    env = HandEnv(vars(args))
-    num_games = 20
+    env = TouchWandEnv(vars(args))
+    num_games = 200
     game_length = 1000
     e_greedy_inc = 0.05/game_length # want to increase by 0.05 per game so we spend enough time exploring
-    mem_size = num_games*game_length 
+    mem_size = num_games*game_length
 
-    cnn_features_TD = np.zeros((num_games,40000), dtype=np.int8)
+    cnn_features_TD = np.zeros((num_games,10000), dtype=np.float32)
     cnn_labels_TD = np.zeros(num_games, dtype=np.int8)
-      
-    cnn_features_ED = np.zeros((num_games,40000), dtype=np.int8)
+
+    cnn_features_ED = np.zeros((num_games,10000), dtype=np.float32)
 
     cnn_labels_ED = np.zeros(num_games, dtype=np.int8)
 
@@ -263,33 +265,31 @@ if __name__ == "__main__":
             n_features=env.observation_space(),
             learning_rate=0.1, e_greedy=0.9,
             replace_target_iter=100, memory_size=mem_size,
-            e_greedy_increment=e_greedy_inc)   
+            e_greedy_increment=e_greedy_inc)
 
     if args.mode == "train" or args.mode == "all":
-            
         games_where_touched = 0
         total_steps = 0
-        
         ep_r = np.zeros(num_games)
         ep_touch = np.zeros(num_games)
-        
+
         for i_episode in range(num_games):
-          
+
             observation = env.reset()
-           
-            done = False    
+
+            done = False
             while not done:
 
                 action = RL.choose_action(observation)
                 observation_, reward, done, info = env.step(action)
-                        
+
                 # something to consider - should we modify the reward if it's the terminal state and
                 # we haven't touched yet? Massive penalty for finishing the round with no touch
-                RL.store_transition(observation, action, reward, observation_)      
-            
+                RL.store_transition(observation, action, reward, observation_)
+
                 ep_r[i_episode] += reward
-            
-                if total_steps > 1000:      
+
+                if total_steps > 1000:
                     cost = RL.learn()
 
                 if env.is_touching():
@@ -299,13 +299,13 @@ if __name__ == "__main__":
                     cnn_labels_TD[TD_cnt] = env.class_label
                     TD_cnt += 1
                     ep_touch[i_episode] += 1
-                      
+
                 if (env.steps % 500 == 0):
-                    print('\nepisode: ', i_episode+1, 'step: ', env.steps, 'episode reward ', ep_r[i_episode])            
+                    print('\nepisode: ', i_episode+1, 'step: ', env.steps, 'episode reward ', ep_r[i_episode])
 
                 observation = observation_
                 total_steps += 1
-            
+
         print('episode: ', i_episode+1,
             'ep_r: ', round(ep_r[i_episode], 2),
             ' epsilon: ', round(RL.epsilon, 3),
@@ -313,14 +313,10 @@ if __name__ == "__main__":
         print('---------------')
 
     print('out of ', num_games, 'games we touched ', games_where_touched, 'times')
-    plt.plot(range(num_games), ep_r)
-    plt.show()
-    if args.mode == "test" or args.mode == "all":
-        # have to recast the data into np.float32
-        cnn_features_TD = np.float32(cnn_features_TD)
-        cnn_labels_TD = np.int8(cnn_labels_TD) # no need for an int to be 32 bit
+
+    if args.mode == "all":
         games_where_touched = 0
-    
+        #touch_array = []
         print('\n\n\ngetting ready to train classifier\n\n\n')
         classifier = tf.estimator.Estimator(model_fn=cnn_model_fn)
         train_input_fn = tf.estimator.inputs.numpy_input_fn(
@@ -330,54 +326,58 @@ if __name__ == "__main__":
             num_epochs=None,
             shuffle=True)
         classifier.train(input_fn=train_input_fn,
-            steps=2000,
+            steps=20000,
             hooks=None)
         print('\nclassifier trained\n')
         ED_cnt = 0 # counter to keep track of how many times we touch in the evaluation phase
 
-        for i_episode in range(num_games): 
+        for i_episode in range(num_games):
             done = False
             print("\n\nepisode: ", i_episode, "testing classification on a new object\n\n")
             observation = env.reset()
-            while not done:     
+            while not done:
                 action = RL.choose_action(observation)
                 observation_, reward, done, info = env.step(action)
                 observation = observation_
-                if done and env.is_touching():          
-                    print('\n\ntouching object and storing data to evaluate at end\n\n')          
-              
+                if done and env.is_touching():
+                    print('\n\ntouching object and storing data to evaluate at end\n\n')
+
                     cnn_features_ED[ED_cnt] = observation_
                     cnn_labels_ED[ED_cnt] = env.class_label
                     ED_cnt += 1
+                    games_where_touched += 1
+                    #touch_array.append('prediction')
+                """
                 elif done:
                     print('\n\nfinished episode with no touch. Gonna take a guess\n\n')
                     cnn_features_ED[ED_cnt] = observation_
                     cnn_labels_ED[ED_cnt] = env.class_label
                     ED_cnt += 1
-          
-        cnn_features_ED = np.float32(cnn_features_ED)
-        cnn_labels_ED = np.int8(cnn_labels_ED)
-
+                    touch_array.append('guess')
+                """
         eval_input_fn = tf.estimator.inputs.numpy_input_fn(
             x={"x": cnn_features_ED[:ED_cnt-1]},
             y=cnn_labels_ED[:ED_cnt-1],
             num_epochs=1,
-            shuffle=False)      
+            shuffle=False)
         eval_results = classifier.evaluate(input_fn=eval_input_fn)
         print('\n--------------------\n')
+        print('out of ', num_games, 'in the evaluation phase, we touched ',
+              games_where_touched, 'times')
         print('These are the results of my evaluations')
         print(eval_results)
         print('\n--------------------\n')
-        print('These are the results of my predictions:') 
+        print('These are the results of my predictions:')
         pred_input_fn = tf.estimator.inputs.numpy_input_fn(
             x={"x": cnn_features_ED[:ED_cnt-1]},
             num_epochs=1,
-            shuffle=False)  
+            shuffle=False)
         pred_results = list(classifier.predict(input_fn=pred_input_fn))
         predicted_classes = [p["classes"] for p in pred_results]
         for i, classes in enumerate(predicted_classes):
             print('I predicted ', classes, 'actual class is ', cnn_labels_ED[i])
-        
+
         print('\n--------------------\n')
         print('In the training phase, I touched the following objects:')
-        print(cnn_labels_TD[:TD_cnt])
+        print(Counter(cnn_labels_TD[:TD_cnt-1]))
+        #print(cnn_labels_TD[:TD_cnt-1])
