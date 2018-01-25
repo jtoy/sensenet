@@ -199,7 +199,6 @@ class TouchWandEnv(HandEnv):
         if bool(options):
             self.options = options #for reloading a specific shape
         pb.resetSimulation()
-        pb.resetSimulation()
         self.load_object()
         self.load_agent()
         default = np.zeros((self.observation_space()))
