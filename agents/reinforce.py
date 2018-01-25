@@ -10,7 +10,7 @@ import torch.autograd as autograd
 from torch.autograd import Variable
 from tensorboardX import SummaryWriter
 import numpy as np
-
+from torch.distributions import Categorical
 from itertools import count
 from collections import namedtuple
 import time,os,math,inspect,re,random,argparse
@@ -30,7 +30,7 @@ parser.add_argument('--model_path', type=str, help='path to store/retrieve model
 parser.add_argument('--data_path', type=str,default='./objects', help='path to training data')
 parser.add_argument('--name', type=str, help='name for logs/model')
 parser.add_argument('--mode', type=str, default="all", help='train/test/all model')
-parser.add_argument('--environment', type=str, default="HandEnv-v0")
+parser.add_argument('--environment','-e', type=str, default="HandEnv-v0")
 parser.add_argument('--num_episodes', type=int, default=1000, help='number of episodes')
 parser.add_argument('--max_steps', type=int, default=500, help='number of steps per episode')
 parser.add_argument('--obj_type', type=str, default="obj", help='obj or stl')
@@ -65,6 +65,7 @@ class Policy(nn.Module):
     self.value_head = nn.Linear(128, 1)
     self.saved_actions = []
     self.rewards = []
+    self.saved_log_probs = []
     self.init_weights()
 
   def init_weights(self):
@@ -113,7 +114,8 @@ class CNNLSTM(nn.Module):
       nn.BatchNorm2d(256),
       nn.ReLU(),
       nn.MaxPool2d(2))
-    self.conv_feature_map_size = 6*6*256
+    self.conv_feature_map_size = 25*25*256
+    #self.conv_feature_map_size = 6*6*256
 
     # LSTM
     self.rnn_hidden_size = 40
@@ -131,9 +133,9 @@ class CNNLSTM(nn.Module):
     # CNN
     cnn_h = self.layer1(x)
     # print("size after layer1:", cnn_h.size())
-    cnn_h = self.layer2(cnn_h)
+    #cnn_h = self.layer2(cnn_h)
     # print("size after layer2:", cnn_h.size())
-    cnn_h = self.layer3(cnn_h)
+    #cnn_h = self.layer3(cnn_h)
     # print("size after layer3:", cnn_h.size())
 
     # LSTM
@@ -163,31 +165,33 @@ def select_action(state,n_actions,epsilon=0.2):
     return np.random.choice(n_actions)
   else:
     state = torch.from_numpy(state).float().unsqueeze(0)
-    probs = model(Variable(state))
+    probs = policy(Variable(state))
     #action = probs.multinomial()
     #model.saved_actions.append(action)
     #return action.data[0][0]
     m = Categorical(probs)
     action = m.sample()
     #model.saved_actions.append(SavedAction(action, state_value))
-    policy.saved_log_probs.append(m.log_proc(action))
+    policy.saved_log_probs.append(m.log_prob(action))
     return action.data[0]
 
 def finish_episode_learning(model, optimizer):
   R = 0
+  policy_loss = []
   rewards = []
-  for r in model.rewards[::-1]:
+  for r in policy.rewards[::-1]:
     R = r + args.gamma * R
     rewards.insert(0, R)
   rewards = torch.Tensor(rewards)
   rewards = (rewards - rewards.mean()) / (rewards.std() + np.finfo(np.float32).eps)
-  for action, r in zip(model.saved_actions, rewards):
-    action.reinforce(r)
+  for log_prob, reward in zip(policy.saved_log_probs, rewards):
+    policy_loss.append(-log_prob * reward)
   optimizer.zero_grad()
-  autograd.backward(model.saved_actions, [None for _ in model.saved_actions])
+  policy_loss = torch.cat(policy_loss).sum()
+  policy_loss.backward()
   optimizer.step()
   del model.rewards[:]
-  del model.saved_actions[:]
+  del model.saved_log_probs[:]
 
 
 # Training:
@@ -196,19 +200,19 @@ def finish_episode_learning(model, optimizer):
 env = sensenet.make(args.environment,vars(args))
 print("action space: ",env.action_space(),env.action_space_n())
 print("class count: ",env.classification_n())
-model = Policy(env.observation_space(),env.action_space_n())
+policy = Policy(env.observation_space(),env.action_space_n())
 cnn_lstm = CNNLSTM(env.classification_n())
 if args.gpu and torch.cuda.is_available():
-  model.cuda()
+  policy.cuda()
   cnn_lstm.cuda()
 if model_path:
   if os.path.exists(model_path+"/model.pkl"):
     print("loading pretrained models")
-    model.load_state_dict(torch.load(model_path+"/model.pkl"))
+    policy.load_state_dict(torch.load(model_path+"/model.pkl"))
     cnn_lstm.load_state_dict(torch.load(model_path+"/cnn_lstm.pkl"))
 
 criterion = nn.MSELoss()
-optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
+optimizer = torch.optim.Adam(policy.parameters(), lr=args.lr)
 
 classifier_criterion = nn.CrossEntropyLoss()
 classifier_optimizer = torch.optim.Adam(cnn_lstm.parameters(), lr=args.lr)
@@ -232,7 +236,7 @@ if args.mode == "all" or args.mode == "train":
       # Move and touch the object in this loop. Record touches only as inputs.
       action = select_training_action(observation,env.action_space_n(),args.epsilon)
       observation, reward, done, info = env.step(action)
-      model.rewards.append(reward)
+      policy.rewards.append(reward)
       average_activated_pixels.append(np.mean(observation))
       if env.is_touching():
         if args.debug:
@@ -279,7 +283,7 @@ if args.mode == "all" or args.mode == "train":
     total_steps +=1
     print("  learning...")
     print(touch_count, "touches in episode", i_episode)
-    finish_episode_learning(model, optimizer)
+    finish_episode_learning(policy, optimizer)
 
     if log_name:
       writer.add_scalar(log_name+"/reward",running_reward,total_steps)
@@ -292,8 +296,8 @@ if args.mode == "all" or args.mode == "train":
       break
     if model_path:
       env.mkdir_p(model_path)
-      torch.save(model.state_dict(), os.path.join(model_path, 'policy.pkl' ))
-      torch.save(model.state_dict(), os.path.join(model_path, 'cnn_lstm.pkl' ))
+      torch.save(policy.state_dict(), os.path.join(model_path, 'policy.pkl' ))
+      torch.save(policy.state_dict(), os.path.join(model_path, 'cnn_lstm.pkl' ))
   print("touched", touched_episodes, "times in", args.num_episodes,"episodes", (touched_episodes/args.num_episodes))
   if len(steps_to_first_touch) > 0:
     print("average steps to first touch", np.mean(steps_to_first_touch))
@@ -317,7 +321,7 @@ if args.mode == "all" or args.mode == "test":
       # Move and touch the object in this loop. Record touches only as inputs.
       action = select_action(observation,env.action_space_n(),args.epsilon)
       observation, reward, done, info = env.step(action)
-      model.rewards.append(reward)
+      policy.rewards.append(reward)
       if env.is_touching():
         observed_touches.append(observation.reshape(200,200))
       if done:
