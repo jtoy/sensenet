@@ -162,7 +162,7 @@ class TouchWandEnv(HandEnv):
         reward = 0
 
         if self.is_touching():
-            touch_reward = 10
+            touch_reward = 1000
             new_obs = np.absolute(depths - 1.0)
             # if you want binary representation of depth camera, uncomment
             # the line below
@@ -171,13 +171,15 @@ class TouchWandEnv(HandEnv):
         else:
             touch_reward = 0
             self.current_observation = np.zeros((self.observation_space()))
-        #obj_po = pb.getBasePositionAndOrientation(self.obj_to_classify)
-        #di,mmmstance = math.sqrt(sum([(xi-yi)**2 for xi,yi in zip(obj_po[0],agent_po[0])])) #TODO faster euclidean
+        agent_po = pb.getBasePositionAndOrientation(self.agent_mb)
+        obj_po = pb.getBasePositionAndOrientation(self.obj_to_classify)
+        #print(agent_po[0])
+        distance = math.sqrt(sum([(xi-yi)**2 for xi,yi in zip(obj_po[0],agent_po[0])])) #TODO faster euclidean
         #distance =  np.linalg.norm(obj_po[0],hand_po[0])
-        distance = 999
+        #distance = 999
         #print("distance:",distance)
         if distance < self.prev_distance:
-            reward += 1 * (self.max_steps - self.steps)
+            reward += 1 #* (self.max_steps - self.steps)
         elif distance > self.prev_distance:
             reward -= 10
         reward -= distance
