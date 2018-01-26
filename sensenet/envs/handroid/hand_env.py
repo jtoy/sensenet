@@ -53,9 +53,9 @@ class HandEnv(sensenet.SenseEnv):
         obj_y = -1
         obj_z = 0
         if 'random_orientation' in self.options:
-            orientation = [random.random(),random.random(),random.random(),random.random()]
+            orientation = (random.random(),random.random(),random.random(),random.random())
         else:
-            orientation = [0,0,0,0]
+            orientation = (0,0,0,0)
 
         if 'obj_type' in self.options:
             obj_type = self.options['obj_type']
@@ -87,8 +87,7 @@ class HandEnv(sensenet.SenseEnv):
         dir_path = os.path.dirname(os.path.realpath(__file__))
         copyfile(stlfile, dir_path+"/data/file."+obj_type)
         urdf_path = dir_path+"/data/loader."+obj_type+".urdf"
-        self.obj_to_classify = pb.loadURDF(urdf_path,(obj_x,obj_y,obj_z),useFixedBase=1)
-        #self.obj_to_classify = pb.loadURDF(urdf_path,(obj_x,obj_y,obj_z),orientation,useFixedBase=1)
+        self.obj_to_classify = pb.loadURDF(urdf_path,(obj_x,obj_y,obj_z),orientation,useFixedBase=1)
         pb.changeVisualShape(self.obj_to_classify,-1,rgbaColor=[1,0,0,1])
 
     def classification_n(self):

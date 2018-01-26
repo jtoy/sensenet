@@ -1,5 +1,5 @@
 import sys
-#sys.path.append('..')
+sys.path.append('..')
 import sensenet
 if len(sys.argv) >= 2:
     env_id = sys.argv[1]
