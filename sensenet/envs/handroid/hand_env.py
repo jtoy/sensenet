@@ -31,6 +31,9 @@ class HandEnv(sensenet.SenseEnv):
             pb.connect(pb.GUI)
         else:
             pb.connect(pb.DIRECT)
+        if 'video' in self.options and self.options['video'] != True:
+            video_name = self.options['video'] #how to default to video.mp4 is empty
+            pb.startStateLogging(pb.STATE_LOGGING_VIDEO_MP4, video_name)
         pb.setGravity(0,0,-10)
         pb.setRealTimeSimulation(0)
         self.move = 0.05 # 0.01
