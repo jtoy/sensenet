@@ -34,6 +34,12 @@ class HandEnv(sensenet.SenseEnv):
         if 'video' in self.options and self.options['video'] != True:
             video_name = self.options['video'] #how to default to video.mp4 is empty
             pb.startStateLogging(pb.STATE_LOGGING_VIDEO_MP4, video_name)
+        if 'debug' in self.options and self.options['debug'] == True:
+            pb.configureDebugVisualizer(pb.COV_ENABLE_GUI,1)
+            pb.configureDebugVisualizer(pb.COV_ENABLE_TINY_RENDERER,1)
+        else:
+            pb.configureDebugVisualizer(pb.COV_ENABLE_GUI,0)
+            pb.configureDebugVisualizer(pb.COV_ENABLE_TINY_RENDERER,0)
         pb.setGravity(0,0,-10)
         pb.setRealTimeSimulation(0)
         self.move = 0.05 # 0.01

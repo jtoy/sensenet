@@ -1,12 +1,13 @@
 import sys
 sys.path.append('..')
-import sensenet
-if len(sys.argv) >= 2:
-    env_id = sys.argv[1]
-    print("loading env", env_id)
-else:
-    print("must pass env as arg")
-env = sensenet.make(env_id,{'render':True})
+import sensenet,argparse
+
+parser = argparse.ArgumentParser(description='SenseNet')
+parser.add_argument('--render', action='store_false', help='render the environment')
+parser.add_argument('--debug', action='store_true', help='debug')
+parser.add_argument('--environment','-e', type=str, default="HandEnv-v0")
+args = parser.parse_args()
+env = sensenet.make(args.environment,{'render':args.render,'debug':args.debug})
 env.reset()
 while (1):
     key = env.getKeyboardEvents()
