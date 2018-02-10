@@ -1,5 +1,4 @@
 import sys
-sys.path.append('..')
 import sensenet
 import torch
 import torch.nn as nn

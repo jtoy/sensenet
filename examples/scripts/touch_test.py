@@ -1,5 +1,4 @@
 import sys
-sys.path.append('..')
 #from env import SenseEnv
 
 import sensenet

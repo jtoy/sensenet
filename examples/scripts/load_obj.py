@@ -1,6 +1,5 @@
 #load a stl/obj file as argv[1]
 import sys
-sys.path.append('..')
 import sensenet
 from random import randint
 env = sensenet.make("BlankEnv-v0",{'render':True,'obj_path':sys.argv[1]})

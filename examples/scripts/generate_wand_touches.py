@@ -1,5 +1,4 @@
 import sys,random,glob,argparse,uuid
-sys.path.append('..')
 import sensenet
 import pybullet as p
 import numpy as np

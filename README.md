@@ -45,3 +45,4 @@ There is a pytorch example and a tensorflow example. to run them:
 cd agents && python reinforce.py
 
 to see the graphs: tensorboard --logdir runs then go to your browser at http://localhost:6000/
+python setup.py register sdist upload

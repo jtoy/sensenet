@@ -1,5 +1,3 @@
-import sys
-sys.path.append('..')
 import sensenet,argparse
 
 parser = argparse.ArgumentParser(description='SenseNet')

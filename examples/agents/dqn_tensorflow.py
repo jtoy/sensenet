@@ -1,5 +1,4 @@
 import sys, argparse
-sys.path.append('..')
 #from env import SenseEnv
 import sensenet
 from sensenet.envs.handroid.touch_wand_env import TouchWandEnv
