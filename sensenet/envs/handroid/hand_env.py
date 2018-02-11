@@ -4,6 +4,7 @@ import time,os,math,inspect,re,errno
 import random,glob,math
 from shutil import copyfile
 import sensenet
+from sensenet import spaces
 from sensenet.error import Error
 
 class HandEnv(sensenet.SenseEnv):
@@ -26,7 +27,6 @@ class HandEnv(sensenet.SenseEnv):
         currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
         parentdir = os.path.dirname(os.path.dirname(currentdir))
         os.sys.path.insert(0,parentdir)
-        #TODO check if options is a string, so we know which environment to load
         if 'render' in self.options and self.options['render'] == True:
             pb.connect(pb.GUI)
         else:
@@ -55,6 +55,10 @@ class HandEnv(sensenet.SenseEnv):
         self.offset = 0.02 # Offset from basic position
         self.downCameraOn = False
         self.prev_distance = 10000000
+        self.action_space = spaces.Discrete(8)
+        self.touch_width = 200
+        self.touch_height = 200
+        self.observation_space = spaces.Box(0, 1, [self.touch_width, self.touch_height])
     def load_object(self):
         #we assume that the directory structure is: SOMEPATH/classname/SHA_NAME/file
         #TODO refactor this whole mess later
@@ -64,7 +68,7 @@ class HandEnv(sensenet.SenseEnv):
         if 'random_orientation' in self.options:
             orientation = (random.random(),random.random(),random.random(),random.random())
         else:
-            orientation = (0,0,0,0)
+            orientation = (0,0,1,0)
 
         if 'obj_type' in self.options:
             obj_type = self.options['obj_type']
@@ -188,8 +192,6 @@ class HandEnv(sensenet.SenseEnv):
 
         return viewMatrix
 
-
-            #return random.random()
     def _step(self,action):
         done = False
         #reward (float): amount of reward achieved by the previous action. The scale varies between environments, but the goal is always to increase your total reward.
@@ -221,8 +223,6 @@ class HandEnv(sensenet.SenseEnv):
         roll=0
         upAxisIndex = 2
         camDistance = 4
-        pixelWidth = 320
-        pixelHeight = 240
         nearPlane = 0.0001
         farPlane = 0.022
         lightDirection = [0,1,0]
@@ -326,7 +326,7 @@ class HandEnv(sensenet.SenseEnv):
         if self.downCameraOn: viewMatrix = down_view()
         else: viewMatrix = self.ahead_view()
         projectionMatrix = pb.computeProjectionMatrixFOV(fov,aspect,nearPlane,farPlane)
-        w,h,img_arr,depths,mask = pb.getCameraImage(200,200, viewMatrix,projectionMatrix, lightDirection,lightColor,renderer=pb.ER_TINY_RENDERER)
+        w,h,img_arr,depths,mask = pb.getCameraImage(self.touch_width,self.touch_height, viewMatrix,projectionMatrix, lightDirection,lightColor,renderer=pb.ER_TINY_RENDERER)
         #w,h,img_arr,depths,mask = pb.getCameraImage(200,200, viewMatrix,projectionMatrix, lightDirection,lightColor,renderer=pb.ER_BULLET_HARDWARE_OPENGL)
         new_obs = np.absolute(depths-1.0)
         new_obs[new_obs > 0] =1
@@ -378,7 +378,7 @@ class HandEnv(sensenet.SenseEnv):
         self.load_object()
         self.load_agent()
         #return observation
-        default = np.zeros((40000))
+        default = np.zeros((self.touch_width * self.touch_height))
         self.steps = 0
         self.current_observation = default
         return default

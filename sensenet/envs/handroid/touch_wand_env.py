@@ -5,6 +5,7 @@ import random,glob,math
 from shutil import copyfile
 import sensenet
 from sensenet.error import Error
+from sensenet import spaces
 from sensenet.envs.handroid.hand_env import HandEnv
 
 class TouchWandEnv(HandEnv):
@@ -24,7 +25,9 @@ class TouchWandEnv(HandEnv):
         self.wandLength = 0.5
         self.wandSide = 0.005
         self.max_steps = 1000
-
+        self.cameraImageHeight = int((2 * 0.851 * self.wandSide)*11800)
+        self.action_space = spaces.Discrete(6)
+        self.observation_space = spaces.Box(0, 1, [self.cameraImageHeight, self.cameraImageHeight])
     def load_agent(self):
         obj = pb.getBasePositionAndOrientation(self.obj_to_classify)
         target = obj[0]
@@ -50,12 +53,12 @@ class TouchWandEnv(HandEnv):
         height = int((2 * 0.851 * self.wandSide)*11800)
         return height*height  #100x100 #200x200
 
-    def action_space(self):
-        base = [x for x in range(5)]
-        return base
+    #def action_space(self):
+    #    base = [x for x in range(5)]
+    #    return base
 
-    def action_space_n(self):
-        return len(self.action_space())
+    #def action_space_n(self):
+    #    return len(self.action_space())
 
     def ahead_view(self):
         link_state = pb.getBasePositionAndOrientation(self.agent_mb)
@@ -145,9 +148,8 @@ class TouchWandEnv(HandEnv):
         viewMatrix = self.ahead_view()
         projectionMatrix = pb.computeProjectionMatrixFOV(self.fov,aspect,
                                                     nearPlane,farPlane)
-        cameraImageHeight = int((2 * 0.851 * self.wandSide)*11800)
-        w,h,img_arr,depths,mask = pb.getCameraImage(cameraImageHeight,
-                                                    cameraImageHeight,
+        w,h,img_arr,depths,mask = pb.getCameraImage(self.cameraImageHeight,
+                                                    self.cameraImageHeight,
                                                     viewMatrix,
                                                     projectionMatrix,
                                                     lightDirection,
@@ -162,7 +164,7 @@ class TouchWandEnv(HandEnv):
         reward = 0
 
         if self.is_touching():
-            touch_reward = 1000
+            touch_reward = 100
             new_obs = np.absolute(depths - 1.0)
             # if you want binary representation of depth camera, uncomment
             # the line below
@@ -170,21 +172,23 @@ class TouchWandEnv(HandEnv):
             self.current_observation = new_obs.flatten()
         else:
             touch_reward = 0
-            self.current_observation = np.zeros((self.observation_space()))
+            self.current_observation = np.zeros(self.cameraImageHeight*self.cameraImageHeight)
         agent_po = pb.getBasePositionAndOrientation(self.agent_mb)
         obj_po = pb.getBasePositionAndOrientation(self.obj_to_classify)
-        #print(agent_po[0])
         distance = math.sqrt(sum([(xi-yi)**2 for xi,yi in zip(obj_po[0],agent_po[0])])) #TODO faster euclidean
-        #distance =  np.linalg.norm(obj_po[0],hand_po[0])
-        #distance = 999
-        #print("distance:",distance)
+
         if distance < self.prev_distance:
-            reward += 1 #* (self.max_steps - self.steps)
+            reward += 1 * (self.max_steps - self.steps)
         elif distance > self.prev_distance:
             reward -= 10
         reward -= distance
         reward += touch_reward
         self.prev_distance = distance
+        if 'debug' in self.options and self.options['debug'] == True:
+            print("touch reward ",touch_reward)
+            print("action ",action)
+            print("reward ",reward)
+            print("distance ",distance)
         if self.steps >= self.max_steps or self.is_touching():
             done = True
         return self.current_observation,reward,done,info
@@ -201,7 +205,7 @@ class TouchWandEnv(HandEnv):
         pb.resetSimulation()
         self.load_object()
         self.load_agent()
-        default = np.zeros((self.observation_space()))
+        default = np.zeros(self.cameraImageHeight*self.cameraImageHeight)
         self.steps = 0
         self.current_observation = default
         return default

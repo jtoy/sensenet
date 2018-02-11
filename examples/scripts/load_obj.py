@@ -7,5 +7,6 @@ done = False
 while (1):
     if done:
         env.reset()
-    action = randint(0, env.action_space_n())
+    action = randint(0, 1)
+    #action = randint(0, env.action_space.n)
     observation,reward,done,info = env.step(action)

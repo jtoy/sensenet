@@ -8,8 +8,8 @@ def test_environments():
     env = gym.make("CartPole-v0")
     input_dim = env.observation_space.shape[0]
     output_dim = env.action_space.n
-    tinput_dim = tenv.observation_space()
-    toutput_dim = len(tenv.action_space())
+    tinput_dim = tenv.observation_space.shape[0]
+    toutput_dim = tenv.action_space.n
     assert tinput_dim > 0
     print("gym observation space: ",input_dim)
     print("gym action space: ",output_dim)

@@ -30,7 +30,7 @@ parser.add_argument('--data_path', type=str,default='./objects', help='path to t
 parser.add_argument('--name', type=str, help='name for logs/model')
 parser.add_argument('--mode', type=str, default="all", help='train/test/all model')
 parser.add_argument('--epoch', type=int,default=5, help='epoch count, default 5')
-parser.add_argument('--environment', type=str, default="HandEnv-v0")
+parser.add_argument('--environment','-e', type=str, default="HandEnv-v0")
 parser.add_argument('--obj_type', type=str, default="obj", help='obj or stl')
 args = parser.parse_args()
 
@@ -62,7 +62,7 @@ class SmallCNNLSTM(nn.Module):
             nn.BatchNorm2d(32),
             nn.ReLU(),
             nn.MaxPool2d(2))
-        self.conv_feature_map_size = 25 * 25 * 32 
+        self.conv_feature_map_size = 25 * 25 * 32
         # LSTM
         self.rnn_hidden_size = 40
         self.rnn = nn.LSTM(
@@ -226,7 +226,7 @@ for epoch in range(args.epoch):
         touches = touches.squeeze(0).float()
         touches = Variable(touches)
         label = Variable(label)
-        #print(touches.size()) #WTF  
+        #print(touches.size()) #WTF
         optimizer.zero_grad()
         outputs = cnn_lstm(touches)
         loss = criterion(outputs, label)

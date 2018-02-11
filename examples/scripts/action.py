@@ -32,4 +32,3 @@ while (1):
                 print("key: ",k)
     if n > -1:
         observation,reward,done,info = env.step(n)
-

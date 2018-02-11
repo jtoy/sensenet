@@ -20,7 +20,7 @@ parser.add_argument('--gamma', type=float, default=0.99, metavar='G', help='disc
 parser.add_argument('--epsilon', type=float, default=0.6, metavar='G', help='epsilon value for random action (default: 0.6)')
 parser.add_argument('--seed', type=int, default=42, metavar='N', help='random seed (default: 42)')
 parser.add_argument('--lr', type=float, default=0.001, metavar='G', help='learning rate')
-parser.add_argument('--log-interval', type=int, default=10, metavar='N', help='interval between training status logs (default: 10)') 
+parser.add_argument('--log-interval', type=int, default=10, metavar='N', help='interval between training status logs (default: 10)')
 parser.add_argument('--render', action='store_true', help='render the environment')
 parser.add_argument('--debug', action='store_true', help='debug')
 parser.add_argument('--gpu', action='store_true', help='use GPU')
@@ -47,7 +47,7 @@ else:
     model_path = args.model_path
   else:
     model_path = None
-# Command to visualize logs: 
+# Command to visualize logs:
 #   tensorboard --logdir runs
 writer = SummaryWriter()
 SavedAction = namedtuple('SavedAction', ['action', 'value'])
@@ -119,7 +119,7 @@ class CNNLSTM(nn.Module):
     # LSTM
     self.rnn_hidden_size = 40
     self.rnn = nn.LSTM(
-      input_size=self.conv_feature_map_size, 
+      input_size=self.conv_feature_map_size,
       hidden_size=self.rnn_hidden_size
     )
 
@@ -144,8 +144,8 @@ class CNNLSTM(nn.Module):
       autograd.Variable(torch.randn((1, 1, self.rnn_hidden_size)), requires_grad=False)
     )  # Init first time step in RNN
     for inp in rnn_inputs:
-      # Only the last output from the LSTM is kept. 
-      # We use a many-to-one RNN architecture. 
+      # Only the last output from the LSTM is kept.
+      # We use a many-to-one RNN architecture.
       rnn_out, rnn_hidden = self.rnn(inp.view(1, 1, -1), rnn_hidden)
     # print("size of rnn_out:", rnn_out.size())
     rnn_out = rnn_out[0]
@@ -155,7 +155,10 @@ class CNNLSTM(nn.Module):
 
 def select_training_action(state,n_actions,epsilon):
   if np.random.rand() < 0.25:
-    return 3 #forward
+    return 0 #forward
+    #print("random")
+    #return np.random.choice(n_actions)
+
   else:
     return select_action(state,n_actions,epsilon)
 
@@ -165,12 +168,8 @@ def select_action(state,n_actions,epsilon=0.2):
   else:
     state = torch.from_numpy(state).float().unsqueeze(0)
     probs = policy(Variable(state))
-    #action = probs.multinomial()
-    #model.saved_actions.append(action)
-    #return action.data[0][0]
     m = Categorical(probs)
     action = m.sample()
-    #model.saved_actions.append(SavedAction(action, state_value))
     policy.saved_log_probs.append(m.log_prob(action))
     return action.data[0]
 
@@ -195,11 +194,10 @@ def finish_episode_learning(model, optimizer):
 
 # Training:
 
-#env = HandEnv(vars(args))
 env = sensenet.make(args.environment,vars(args))
-print("action space: ",env.action_space(),env.action_space_n())
+print("action space: ",env.action_space,env.action_space.n)
 print("class count: ",env.classification_n())
-policy = Policy(env.observation_space(),env.action_space_n())
+policy = Policy(env.observation_space.shape[0] * env.observation_space.shape[1],env.action_space.n)
 cnn_lstm = CNNLSTM(env.classification_n())
 if args.gpu and torch.cuda.is_available():
   policy.cuda()
@@ -220,7 +218,7 @@ running_reward = 10
 total_steps = 0
 touched_episodes = 0
 steps_to_first_touch = []
-  
+
 if args.mode == "all" or args.mode == "train":
 
   for i_episode in range(args.num_episodes):
@@ -233,14 +231,14 @@ if args.mode == "all" or args.mode == "train":
 
     for step in range(args.max_steps):
       # Move and touch the object in this loop. Record touches only as inputs.
-      action = select_training_action(observation,env.action_space_n(),args.epsilon)
+      action = select_training_action(observation,env.action_space.n,args.epsilon)
       observation, reward, done, info = env.step(action)
       policy.rewards.append(reward)
       average_activated_pixels.append(np.mean(observation))
       if env.is_touching():
         if args.debug:
           print("touching")
-        observed_touches.append(observation.reshape(200,200))
+        observed_touches.append(observation.reshape(env.observation_space.shape[0],env.observation_space.shape[1]))
         touch_count += 1
         if touch_count == 1:
           steps_to_first_touch.append(step)
@@ -318,11 +316,11 @@ if args.mode == "all" or args.mode == "test":
 
     for step in range(args.max_steps):
       # Move and touch the object in this loop. Record touches only as inputs.
-      action = select_action(observation,env.action_space_n(),args.epsilon)
+      action = select_action(observation,env.action_space.n,args.epsilon)
       observation, reward, done, info = env.step(action)
       policy.rewards.append(reward)
       if env.is_touching():
-        observed_touches.append(observation.reshape(200,200))
+        observed_touches.append(observation.reshape(env.observation_space.shape[0],env.observation_space.shape[1]))
       if done:
         break
 
@@ -344,5 +342,5 @@ if args.mode == "all" or args.mode == "test":
       print("  no touches!")
     total += 1
 
-  print('Accuracy of the network: %d %%' % (100 * total_correct / total )) 
-  print('touched ',  touched_episodes, ' times') 
+  print('Accuracy of the network: %d %%' % (100 * total_correct / total ))
+  print('touched ',  touched_episodes, ' times')
