@@ -325,7 +325,8 @@ if args.mode == "all" or args.mode == "test":
         break
 
     if len(observed_touches) != 0:
-      observed_touches = torch.LongTensor(torch.from_numpy(np.asarray(observed_touches)))
+      observed_touches = torch.from_numpy(np.asarray(observed_touches))
+      #observed_touches = torch.LongTensor(torch.from_numpy(np.asarray(observed_touches)))
       touched_episodes += 1
       if args.gpu and torch.cuda.is_available():
         observed_touches = observed_touches.cuda()
