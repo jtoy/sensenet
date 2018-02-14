@@ -1,6 +1,9 @@
 sudo: required
 language: python
 group: deprecated-2017Q4
+notifications:
+  email:
+    - ci@sensenet.ai
 python:
   - 3.6
 services:
