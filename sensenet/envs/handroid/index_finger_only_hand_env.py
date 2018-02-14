@@ -5,6 +5,7 @@ import random,glob,math
 from shutil import copyfile
 
 import sensenet
+from sensenet import spaces
 from sensenet.error import Error
 from sensenet.envs.handroid.hand_env import HandEnv
 
@@ -42,6 +43,9 @@ class IndexFingerOnlyHandEnv(HandEnv):
         self.offset = 0.02 # Offset from basic position
         self.downCameraOn = False
         self.prev_distance = 10000000
+        self.action_space = spaces.Discrete(8)
+        self.touch_width = 200
+        self.touch_height = 200
 
     def load_agent(self):
         dir_path = os.path.dirname(os.path.realpath(__file__))

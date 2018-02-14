@@ -4,6 +4,7 @@ import time,os,math,inspect,re,errno
 import random,glob,math
 from shutil import copyfile
 import sensenet
+from sensenet import spaces
 from sensenet.error import Error
 
 class BlankEnv(sensenet.SenseEnv):
@@ -35,6 +36,7 @@ class BlankEnv(sensenet.SenseEnv):
         self.move = 0.05 # 0.01
         self.load_object()
         #self.load_agent()
+        self.action_space = spaces.Discrete(1) #smallest discrete is 1
     def load_object(self):
         #we assume that the directory structure is: SOMEPATH/classname/SHA_NAME/file
         #TODO make path configurable

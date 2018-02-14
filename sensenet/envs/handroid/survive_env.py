@@ -4,6 +4,7 @@ import time,os,math,inspect,re,errno
 import random,glob,math
 from shutil import copyfile
 import sensenet
+from sensenet import spaces
 from sensenet.error import Error
 
 class SurviveEnv(sensenet.SenseEnv):
@@ -27,7 +28,7 @@ class SurviveEnv(sensenet.SenseEnv):
         self.move = 0.01 # 0.01
         self.touched_steps = 0 #how many steps have we touched agent
         self.touch_max_steps_until_death = 10
-
+        self.action_space = spaces.Discrete(6)
     def load_enemies(self):
 
         #self.enemy = pb.loadURDF(urdf_path,(obj_x,obj_y,obj_z),useFixedBase=1)
