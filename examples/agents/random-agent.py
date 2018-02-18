@@ -4,6 +4,7 @@ import logging
 import random
 import sys
 import sensenet
+#import gym
 
 logger = logging.getLogger()
 
@@ -19,12 +20,14 @@ def main():
         logger.setLevel(logging.DEBUG)
 
     env = sensenet.make(args.environment,{'render':True})
+    #env = gym.make('MountainCar-v0')
     
     observation_n = env.reset()
 
     while True:
         # your agent here
-        action_n = random.choice(env.action_space())
+        env.render()
+        action_n = env.action_space.sample()
         observation_n, reward_n, done_n, info = env.step(action_n)
 
     return 0

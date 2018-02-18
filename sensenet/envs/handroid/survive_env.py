@@ -65,13 +65,15 @@ class SurviveEnv(sensenet.SenseEnv):
         self.acid = pb.createConstraint(self.agent,-1,-1,-1,pb.JOINT_FIXED,[0,0,0],[0,0,0],[0,0,1])
 
 
-    def reset(self):
+
+    def _reset(self,opts={}):
         self.ax,self.ay,self.az = 0,0,0
-        planeId = pb.createCollisionShape(pb.GEOM_PLANE)
-        planeUid = pb.createMultiBody(0,planeId,0)
-        pb.changeVisualShape(planeUid,-1,rgbaColor=[1,0.6,0.4,1])
-        self.load_agent()
-        self.load_enemies()
+        #planeId = pb.createCollisionShape(pb.GEOM_PLANE)
+        #planeUid = pb.createMultiBody(0,planeId,0)
+        #pb.changeVisualShape(planeUid,-1,rgbaColor=[1,0.6,0.4,1])
+        #self.load_agent()
+        #self.load_enemies()
+        return [0]
 
     def new_step():
         self.done = False
@@ -89,7 +91,6 @@ class SurviveEnv(sensenet.SenseEnv):
 
         reward += 1
         # return observation,reward,done,info,homeostatis
-        return observation,reward,done,info
 
     def _step(self,action):
         done = False
@@ -108,16 +109,16 @@ class SurviveEnv(sensenet.SenseEnv):
             pass
         pivot=[self.ax,self.ay,self.az]
         orn = pb.getQuaternionFromEuler([0,0,0])
-        pb.changeConstraint(self.acid,pivot,jointChildFrameOrientation=orn, maxForce=50)
+        #pb.changeConstraint(self.acid,pivot,jointChildFrameOrientation=orn, maxForce=50)
         #pb.changeConstraint(self.acid,pivot,jointChildFrameOrientation=orn, maxForce=50)
         pb.stepSimulation()
-        (x,y,z),_ = pb.getBasePositionAndOrientation(self.agent)
-        enem_p = pb.getBasePositionAndOrientation(self.enemy)
-        newx = enem_p[0][0]+((enem_p[0][0]+x)/2)
-        newy = enem_p[0][1]+((enem_p[0][1]+y)/2)
-        newz = enem_p[0][2]+((enem_p[0][2]+z)/2)
-        pivot = [newx,newy,newz]
-        orn = pb.getQuaternionFromEuler([0,0,0])
+        #(x,y,z),_ = pb.getBasePositionAndOrientation(self.agent)
+        #enem_p = pb.getBasePositionAndOrientation(self.enemy)
+        #newx = enem_p[0][0]+((enem_p[0][0]+x)/2)
+        #newy = enem_p[0][1]+((enem_p[0][1]+y)/2)
+        #newz = enem_p[0][2]+((enem_p[0][2]+z)/2)
+        #pivot = [newx,newy,newz]
+        #orn = pb.getQuaternionFromEuler([0,0,0])
         #pb.changeConstraint(self.ecid,pivot,jointChildFrameOrientation=orn, maxForce=50)
 
 
