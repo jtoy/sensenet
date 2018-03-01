@@ -43,4 +43,4 @@ if os.path.isdir(cwd+"/envs"):
         for name in f.split("/")[-1].split(".")[0].split("_"):
             entry_point_name += name.capitalize()
 
-        register(id=entry_point_name,entry_point=entry_point_name)
+        register(id=entry_point_name,entry_point=entry_point_name,local_only=True)

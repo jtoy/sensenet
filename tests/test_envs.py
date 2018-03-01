@@ -26,3 +26,8 @@ def test_can_list():
     print(envs.registry.all())
     envids = [spec.id for spec in envs.registry.all()]
     assert len(envids) > 0
+def test_can_list_local_envs():
+    local_envs = [spec.id for spec in envs.registry.local_envs()]
+    all_envs = [spec.id for spec in envs.registry.all()]
+    assert len(local_envs) > 0
+    assert len(all_envs) > len(local_envs)
