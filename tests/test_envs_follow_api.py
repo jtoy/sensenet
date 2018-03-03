@@ -10,7 +10,13 @@ def test_envs_follow_api():
         print("loading env",name)
         env = sensenet.make(name)
         assert env.action_space.n
+
         reset_observation = env.reset()
+
+        #TODO write  test to confirm observation space is the same for the reset and step function
+        #assert env.observation_space == reset_observation.shape
+   
+
         assert(reset_observation is not None)
         observation = env.step(0)
         assert observation != None
