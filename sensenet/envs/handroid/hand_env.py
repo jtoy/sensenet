@@ -61,7 +61,7 @@ class HandEnv(sensenet.SenseEnv):
         self.observation_space = spaces.Box(0, 1, [self.touch_width, self.touch_height])
     def load_object(self):
         #we assume that the directory structure is: SOMEPATH/classname/SHA_NAME/file
-        #TODO refactor this whole mess later
+        #TODO refactor this whole mess later after addings tons of unit testing!!!!
         obj_x = 0
         obj_y = -1
         obj_z = 0
@@ -74,13 +74,16 @@ class HandEnv(sensenet.SenseEnv):
             obj_type = self.options['obj_type']
         elif 'obj_path' in self.options and self.options['obj_path'] != None and 'obj' in self.options['obj_path']:
             obj_type = 'obj'
-        else: #TODO change default to obj after more performance testing
+        elif 'obj_path' in self.options and self.options['obj_path'] != None and 'stl' in self.options['obj_path']:
             obj_type = 'stl'
+        else: #TODO change default to obj after more performance testing
+            obj_type = 'obj'
         if 'obj_path' not in self.options or ('obj_path' in self.options and self.options['obj_path'] == None):
             path = self.get_data_path()
             if path == None:
                 dir_path = os.path.dirname(os.path.realpath(__file__))
                 stlfile = dir_path + "/data/pyramid.stl"
+                stlfile = dir_path + "/data/missile.obj"
             else:
                 files = glob.glob(path+"/**/*."+obj_type,recursive=True)
                 try:
