@@ -90,9 +90,9 @@ class HandEnv(sensenet.SenseEnv):
                                     % (obj_type, path))
                 #TODO copy this file to some tmp area where we can guarantee writing
                 if os.name == 'nt':
-                    self.class_label = int(stlfile.split("\\")[-3].split("_")[0])
+                    self.class_label = int(stlfile.split("\\")[-2].split("_")[0])
                 elif os.name == 'posix' or os.name == 'mac':
-                    self.class_label = int(stlfile.split("/")[-3].split("_")[0])
+                    self.class_label = int(stlfile.split("/")[-2].split("_")[0])
                 #class labels are folder names,must be integer or N_text
                 #print("class_label: ",self.class_label)
         else:
@@ -107,7 +107,7 @@ class HandEnv(sensenet.SenseEnv):
         if self.get_data_path() == None:
             return None
         else:
-            path = os.path.join(self.get_data_path(), "objects/*/")
+            path = os.path.join(self.get_data_path(), "*/")
             subd = glob.glob(path)
             return len(subd)
 
