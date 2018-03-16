@@ -33,7 +33,7 @@ I have made and collected thousands of different objects to manipulate in the si
 You can use the SenseNet dataset or your own dataset.
 Download the full dataset at https://sensenet.ai
 
-![dataset](images/dataset.png?raw=true "dataset")
+![dataset](images/touchnetv2.png?raw=true "dataset")
 
 
 
