@@ -91,7 +91,7 @@ class EnvSpec(object):
                 #env = cls(**self._kwargs)
                 #TODO merge use of kwargs and options
                 env = cls(options)
-            except ModuleNotFoundError:
+            except ImportError:
                 #load envs directory if it exists
                 import os,sys,importlib
                 lib_path = os.getcwd() + os.sep + 'envs'
