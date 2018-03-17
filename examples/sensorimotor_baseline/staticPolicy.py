@@ -17,15 +17,23 @@ if __name__ == "__main__":
     parser.add_argument('--num_epochs', type=int, default=None, help='Number of Epochs to run training of CNN. None (blank, default) will run until convergence.')
     parser.add_argument('--num_steps', type=int, default=10000, help='Number of steps to run the training of CNN. Default is 10000')
     parser.add_argument('--render', action='store_true', help='render the environment')
+    parser.add_argument('--lr',type=float,  default=0.1)    
     parser.add_argument('--model_path', type=str, default='tmp/CNN/', help='path to store/retrieve CNN model')
     parser.add_argument('--log_file', type=str, default='cnn_log.txt', help='file to store logging information')
     parser.add_argument('--agent_path', type=str, default='tmp/DQN/dqn.ckpt', help='path to store/retrieve agent')
     parser.add_argument('--mode', type=str, default="all", help='train/test/all model')
     parser.add_argument('--data_path', type=str, default="data/touchnet_v2/")    
+    parser.add_argument('--name', type=str)    
+    parser.add_argument('--tensorboard', type=str)    
     parser.add_argument('--test_split_ratio', type=float, default=None)
     args = parser.parse_args()
 
     env = sensenet.make(args.environment,vars(args))
+
+    if args.name != None:
+        args.model_path = "models/"+args.name
+        args.log_path = "logs/"+args.name
+        args.tensorboard = args.name
 
     if args.num_classes is None:
         args.num_classes = env.classification_n()
@@ -62,7 +70,7 @@ if __name__ == "__main__":
         e_greedy_inc = 0.05/game_length
         RL = DeepQNetwork(n_actions=env.action_space.n,
                 n_features=observation_size,
-                learning_rate=0.1, e_greedy=0.9,
+                learning_rate=args.lr, e_greedy=0.9,
                 replace_target_iter=100, memory_size=mem_size,
                 e_greedy_increment=e_greedy_inc,
                 model_dir=args.agent_path)
