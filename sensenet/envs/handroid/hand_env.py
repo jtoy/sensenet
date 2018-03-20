@@ -8,6 +8,10 @@ from sensenet import spaces
 from sensenet.error import Error
 
 class HandEnv(sensenet.SenseEnv):
+    metadata = {
+        'render.modes': ['rgb_array'],
+        'video.frames_per_second' : 30
+    }
     def getKeyboardEvents(self):
         return pb.getKeyboardEvents()
 
@@ -152,6 +156,35 @@ class HandEnv(sensenet.SenseEnv):
     def action_space_n(self):
         return len(self.action_space())
 
+    def _render(self, mode="rgb_array", close=False):
+        if mode != "rgb_array":
+            return np.array([])
+        base_pos = [0,0,0]
+        _cam_dist = 5  #.3
+        _cam_yaw = 50
+        _cam_pitch = -35
+        _render_width=480
+        _render_height=480
+
+        view_matrix = pb.computeViewMatrixFromYawPitchRoll(
+            cameraTargetPosition=base_pos,
+            distance=_cam_dist,
+            yaw=_cam_yaw,
+            pitch=_cam_pitch,
+            roll=0,
+            upAxisIndex=2)
+        proj_matrix = pb.computeProjectionMatrixFOV(
+            fov=90, aspect=float(_render_width)/_render_height,
+            nearVal=0.01, farVal=100.0)
+        #proj_matrix=[1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, -1.0000200271606445, -1.0, 0.0, 0.0, -0.02000020071864128, 0.0]
+        (_, _, px, _, _) = pb.getCameraImage(
+            width=_render_width, height=_render_height, viewMatrix=view_matrix,
+            projectionMatrix=proj_matrix, renderer=pb.ER_BULLET_HARDWARE_OPENGL)
+            #projectionMatrix=proj_matrix, renderer=pb.ER_TINY_RENDERER) #ER_BULLET_HARDWARE_OPENGL)
+        rgb_array = np.array(px, dtype=np.uint8)
+        rgb_array = np.reshape(rgb_array, (_render_height, _render_width, 4))
+        rgb_array = rgb_array[:, :, :3]
+        return rgb_array
 
     def ahead_view(self):
         link_state = pb.getLinkState(self.agent,self.indexEndID)

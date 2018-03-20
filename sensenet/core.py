@@ -103,10 +103,8 @@ class SenseEnv(object):
         """
         return self._reset()
 
-    def render(self, mode='human', close=False):
-        return True
 
-    def oldrender(self, mode='human', close=False):
+    def render(self, mode='rgb_array', close=False):
         """Renders the environment.
 
         The set of supported modes varies per environment. (And some
