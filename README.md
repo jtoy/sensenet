@@ -6,7 +6,7 @@ SenseNet is a sensorimotor and touch simulator to teach AIs how to interact with
 
 ## Reinforcement learning
 
- SenseNet can be used in reinforcement learning environments. The original code used OpenAI's gym as the base and so any code written for gym can be used with little to no tweaking of your code. Oftentimes you can just replace gym with sensenet and everything will work. Additionally, SenseNet can be used
+ SenseNet can be used in reinforcement learning environments. The original code used OpenAI's gym as the base and so any code written for gym can be used with little to no tweaking of your code. Oftentimes you can just replace gym with sensenet and everything will work.
 
 
 ## Supported Systems
@@ -31,7 +31,7 @@ python examples/agents/reinforce.py -e TouchWandEnv-v0
 
 I have made and collected thousands of different objects to manipulate in the simulator.
 You can use the SenseNet dataset or your own dataset.
-Download the full dataset at https://sensenet.ai
+
 
 ![dataset](images/touchnetv2.png?raw=true "dataset")
 
